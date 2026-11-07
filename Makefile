@@ -40,6 +40,8 @@ stage: build
 	install -D -m 0644 deploy/nginx/nginx-sitemap.conf                $(STAGE)/nginx/nginx-sitemap.conf
 	install -D -m 0644 README.md                                      $(STAGE)/README.md
 	install -D -m 0644 docs/DESIGN.md                                 $(STAGE)/docs/DESIGN.md
+	install -D -m 0644 docs/development.md                            $(STAGE)/docs/development.md
+	install -D -m 0644 docs/spec-basis.md                             $(STAGE)/docs/spec-basis.md
 	install -D -m 0644 schema/map.schema.json                         $(STAGE)/schema/map.schema.json
 	install -D -m 0644 $(CROSSPLANE_DIR)/LICENSE                      $(STAGE)/LICENSES/nginx-go-crossplane.LICENSE
 	echo "$(VERSION) $(GOOS)/$(GOARCH) $$(go env GOVERSION)" > $(STAGE)/VERSION

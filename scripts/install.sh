@@ -65,6 +65,9 @@ fi
 
 DOCDIR="$DESTDIR/usr/local/share/doc/nginx-sitemap"
 install -D -m 0644 "$DOCS/README.md"                                 "$DOCDIR/README.md"
+for f in DESIGN.md development.md spec-basis.md; do
+  [ -f "$DOCS/docs/$f" ] && install -D -m 0644 "$DOCS/docs/$f" "$DOCDIR/docs/$f"
+done
 install -D -m 0644 "$CONF_EX"                                        "$DOCDIR/sitemap.conf.example"
 install -D -m 0644 "$NGINX_EX"                                       "$DOCDIR/nginx-sitemap.nginx.conf.sample"
 install -D -m 0644 "$UNITS/nginx-sitemap.service.d/resolve.conf.example" "$DOCDIR/resolve.conf.example"
