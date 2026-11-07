@@ -2,7 +2,7 @@
   "schema_version": "1",
   "generated_at": "2026-11-07T12:00:00Z",
   "tool_version": "test",
-  "config_hash": "sha256:b36412c968974d0ad2e4a7b0c0b624f8ed0ed66fcd3d111ebbf9719700724d24",
+  "config_hash": "<HASH>",
   "nginx": {
     "main": "<REPO>/testdata/fixtures/publish_sample/nginx.conf",
     "conf_prefix": "<REPO>/testdata/fixtures/publish_sample",

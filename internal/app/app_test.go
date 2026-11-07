@@ -18,6 +18,41 @@ func TestExitFatalOnMissingMain(t *testing.T) {
 	}
 }
 
+// The hash is deterministic for identical input and changes with file
+// content, tool version and analysis options.
+func TestConfigHash(t *testing.T) {
+	d := t.TempDir()
+	conf := filepath.Join(d, "nginx.conf")
+	write := func(body string) {
+		if err := os.WriteFile(conf, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hash := func(o Options) string {
+		o.NginxConf, o.OutputDir, o.Now = ptr(conf), ptr(""), fixedNow
+		res, err := Run(o)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res.Map.ConfigHash
+	}
+	write("events {} http { server { listen 80; } }")
+	h1 := hash(Options{ToolVersion: "a"})
+	if h1 != hash(Options{ToolVersion: "a"}) {
+		t.Fatal("hash must be deterministic")
+	}
+	if h1 == hash(Options{ToolVersion: "b"}) {
+		t.Error("hash must include the tool version")
+	}
+	if h1 == hash(Options{ToolVersion: "a", AssumeSuperuser: ptr(false)}) {
+		t.Error("hash must include analysis options")
+	}
+	write("events {} http { server { listen 81; } }")
+	if h1 == hash(Options{ToolVersion: "a"}) {
+		t.Error("hash must change with file content")
+	}
+}
+
 func TestCreatesOutputDir(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "a", "b")
 	fx := filepath.Join(repoRoot(t), "testdata", "fixtures", "upstream", "nginx.conf")
