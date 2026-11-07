@@ -69,5 +69,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ github.ref_name }}
         run: |
+          # SemVer pre-release tags (v0.1.0-rc1, v1.2.0-beta.1, ...) are published
+          # as pre-releases and never become "Latest".
+          case "$VERSION" in
+            *-*) kind=(--prerelease --latest=false) ;;
+            *)   kind=(--latest) ;;
+          esac
           gh release create "$VERSION" dist/*.tar.gz dist/*.tar.gz.sha256 \
-            --title "nginx-sitemap $VERSION" --generate-notes --verify-tag
+            --title "nginx-sitemap $VERSION" --generate-notes --verify-tag "${kind[@]}"
