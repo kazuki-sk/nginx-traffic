@@ -108,6 +108,7 @@ git tag v0.1.0 && git push origin v0.1.0
   3. amd64 / arm64 の tar.gz と sha256 の作成
   4. tar.gz から一時ディレクトリへのインストールと、実際の生成テスト
   5. GitHub Release の作成
+- タグに `-` を含む版（`v0.1.0-rc1`、`v1.2.0-beta.1` など）は **pre-release** として公開し、Latest にはしない。`v0.1.0` のような正式版だけが Latest になる。
 - 使う Go は 1.27 系の最新パッチ。Actions はコミット SHA で固定している。
 - 所要時間は 1 回あたり数分で、private リポジトリの無料枠（Free プランで 2,000 分/月）に十分収まる。
 
