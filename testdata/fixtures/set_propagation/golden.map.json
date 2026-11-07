@@ -387,6 +387,170 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "dynamic",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "set.example",
+        "url": "http://set.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "set.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:6",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:7",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:8",
+            "text": "    server_name set.example;"
+          },
+          {
+            "src": "nginx.conf:9",
+            "text": "    set $env prod;"
+          },
+          {
+            "src": "nginx.conf:10",
+            "text": "    set $base /srv/$env;"
+          },
+          {
+            "src": "nginx.conf:12",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:13",
+            "text": "        root $base/html;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:15",
+            "text": "    location /override {"
+          },
+          {
+            "src": "nginx.conf:16",
+            "text": "        set $env staging;"
+          },
+          {
+            "src": "nginx.conf:17",
+            "text": "        return 200 \"$env $base\";"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:19",
+            "text": "    location /cond {"
+          },
+          {
+            "src": "nginx.conf:20",
+            "text": "        if $http_x_debug {"
+          },
+          {
+            "src": "nginx.conf:21",
+            "text": "            set $env debug;"
+          },
+          {
+            "src": "",
+            "text": "        }"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "        return 200 $env;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:25",
+            "text": "    location /known {"
+          },
+          {
+            "src": "nginx.conf:26",
+            "text": "        if $env = prod {"
+          },
+          {
+            "src": "nginx.conf:27",
+            "text": "            set $tier gold;"
+          },
+          {
+            "src": "",
+            "text": "        }"
+          },
+          {
+            "src": "nginx.conf:29",
+            "text": "        return 200 $tier;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:31",
+            "text": "    location /port {"
+          },
+          {
+            "src": "nginx.conf:32",
+            "text": "        return 200 $scheme://$server_name:$server_port;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:34",
+            "text": "    location /nested {"
+          },
+          {
+            "src": "nginx.conf:35",
+            "text": "        set $lvl outer;"
+          },
+          {
+            "src": "nginx.conf:36",
+            "text": "        location /nested/inner {"
+          },
+          {
+            "src": "nginx.conf:38",
+            "text": "            return 200 $lvl;"
+          },
+          {
+            "src": "",
+            "text": "        }"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [],
   "warnings": []
 }

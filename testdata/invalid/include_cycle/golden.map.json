@@ -108,6 +108,50 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "a.conf:1",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "cyc.example",
+        "url": "http://cyc.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "cyc.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "a.conf:1",
+            "text": "server {"
+          },
+          {
+            "src": "a.conf:1",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "a.conf:1",
+            "text": "    server_name cyc.example;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [
     {
       "code": "cycle",

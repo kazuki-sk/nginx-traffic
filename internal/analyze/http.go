@@ -70,6 +70,7 @@ func (a *analyzer) analyzeHTTP(h *conf.Node) *model.HTTP {
 	for _, n := range h.Find("server") {
 		sc := hc.newServer(n, len(hc.servers)+1)
 		hc.servers = append(hc.servers, sc)
+		a.nodes.Servers[sc.m.ID] = n
 		hc.out.Servers = append(hc.out.Servers, sc.m)
 		names[sc.m.ID] = sc.m.Names
 		for _, l := range sc.listens {

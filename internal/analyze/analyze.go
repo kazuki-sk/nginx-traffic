@@ -30,6 +30,16 @@ type analyzer struct {
 	opt      Options
 	errors   []model.Diag
 	warnings []model.Diag
+	nodes    Nodes
+}
+
+// Nodes gives later passes (the portal view) access to the AST behind
+// model elements. Arguments are already masked.
+type Nodes struct {
+	HTTP      *conf.Node
+	Stream    *conf.Node
+	Servers   map[string]*conf.Node // server id → server block
+	Upstreams map[string]*conf.Node // "http:<name>" / "stream:<name>" → upstream block (explicit only)
 }
 
 func (a *analyzer) errorf(code string, src conf.Src, format string, args ...any) {
@@ -51,11 +61,12 @@ type Result struct {
 	// Internal handles used by the manual-annotation pass.
 	ServerByName   map[string][]string // server_name → server ids (http and stream)
 	UpstreamByName map[string]*model.Upstream
+	Nodes          Nodes
 }
 
 // Analyze runs the analysis over the loaded configuration.
 func Analyze(res *conf.Result, opt Options) *Result {
-	a := &analyzer{opt: opt}
+	a := &analyzer{opt: opt, nodes: Nodes{Servers: map[string]*conf.Node{}, Upstreams: map[string]*conf.Node{}}}
 	applyMask(res.Main, opt.Mask)
 
 	out := &Result{ServerByName: map[string][]string{}, UpstreamByName: map[string]*model.Upstream{}}
@@ -79,6 +90,7 @@ func Analyze(res *conf.Result, opt Options) *Result {
 		for _, extra := range httpBlocks[1:] {
 			a.errorf("parse-error", extra.Src, "\"http\" directive is duplicate")
 		}
+		a.nodes.HTTP = httpBlocks[0]
 		out.HTTP = a.analyzeHTTP(httpBlocks[0])
 		for _, s := range out.HTTP.Servers {
 			for _, n := range s.Names {
@@ -93,6 +105,7 @@ func Analyze(res *conf.Result, opt Options) *Result {
 		for _, extra := range streamBlocks[1:] {
 			a.errorf("parse-error", extra.Src, "\"stream\" directive is duplicate")
 		}
+		a.nodes.Stream = streamBlocks[0]
 		out.Stream = a.analyzeStream(streamBlocks[0])
 		for _, s := range out.Stream.Servers {
 			for _, n := range s.Names {
@@ -105,6 +118,7 @@ func Analyze(res *conf.Result, opt Options) *Result {
 	}
 	sortDiags(a.errors)
 	sortDiags(a.warnings)
+	out.Nodes = a.nodes
 	out.Errors = a.errors
 	out.Warnings = a.warnings
 	return out

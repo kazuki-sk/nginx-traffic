@@ -767,6 +767,218 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:5",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "app.example",
+        "url": "http://app.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "app.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:5",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:6",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:7",
+            "text": "    server_name app.example;"
+          },
+          {
+            "src": "nginx.conf:8",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:8",
+            "text": "        return 200 app;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:14",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s2",
+        "server_id": "s2",
+        "proto": "http",
+        "name": "nginx-map.lab.internal",
+        "url": "https://nginx-map.lab.internal/",
+        "listens": [
+          "http:10.0.0.10:443"
+        ],
+        "group": "lab.internal",
+        "group_source": "domain",
+        "access": {
+          "summary": "10.0.0.0/8、192.168.0.0/16 のみ",
+          "rules": [
+            "allow 10.0.0.0/8",
+            "allow 192.168.0.0/16",
+            "deny all"
+          ],
+          "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:14",
+            "text": "server {"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:16",
+            "text": "    listen 10.0.0.10:443 ssl;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17",
+            "text": "    http2 on;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:18",
+            "text": "    server_name nginx-map.lab.internal;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:20",
+            "text": "    ssl_certificate /etc/nginx/tls/nginx-map.crt;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:21",
+            "text": "    ssl_certificate_key /etc/nginx/tls/nginx-map.key;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23",
+            "text": "    root /var/lib/nginx-sitemap;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24",
+            "text": "    index index.html;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27",
+            "text": "    allow 10.0.0.0/8;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28",
+            "text": "    allow 192.168.0.0/16;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29",
+            "text": "    deny all;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32",
+            "text": "    add_header Cache-Control no-store always;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33",
+            "text": "    add_header X-Content-Type-Options nosniff always;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34",
+            "text": "    add_header Referrer-Policy no-referrer always;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:35",
+            "text": "    etag off;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:36",
+            "text": "    if_modified_since off;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:38",
+            "text": "    access_log off;"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:40",
+            "text": "    location = / {"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:41",
+            "text": "        try_files /index.html =404;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:43",
+            "text": "    location = /index.html {"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:44",
+            "text": "    location = /map.json {"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:45",
+            "text": "        default_type application/json;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:47",
+            "text": "    location = /map.dot {"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:48",
+            "text": "        default_type text/plain;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:51",
+            "text": "    location / {"
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:52",
+            "text": "        return 404;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [],
   "warnings": []
 }

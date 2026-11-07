@@ -28,23 +28,59 @@ var page = template.Must(template.New("index").Parse(`<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{.CSP}}
 <meta name="referrer" content="no-referrer">
-<title>nginx sitemap</title>
+<title>nginx-sitemap</title>
 <style>{{.CSS}}</style>
 </head>
 <body>
-<header id="hdr">
-<h1>nginx sitemap</h1>
-<div class="meta"></div>
-<div class="controls">
-<input id="q" type="search" placeholder="server_name / location / 宛先 / upstream で検索" aria-label="検索">
-<label><input id="onlydyn" type="checkbox"> dynamic / conditional のみ</label>
-</div>
-<div class="controls"><nav class="tabs" id="tabs" aria-label="表示切替"></nav></div>
+<div class="errbar gut" id="errbar" hidden></div>
+<header class="gut">
+  <h1>nginx-sitemap</h1>
+  <div class="meta" id="meta"></div>
+  <nav class="tabs" id="tabs" aria-label="画面の切り替え">
+    <button data-tab="graph" aria-selected="true">構成図</button>
+    <button data-tab="sites" aria-selected="false">サイト一覧</button>
+    <button data-tab="ledger" aria-selected="false">台帳</button>
+    <button data-tab="conf" aria-selected="false">設定</button>
+    <button data-tab="diag" aria-selected="false" id="t-diag">解析の詳細</button>
+  </nav>
 </header>
-<main>
-<div class="stats" id="stats"></div>
-<div id="content"></div>
-<noscript>この表示には JavaScript が必要です。機械可読データは map.json を参照してください。</noscript>
+<main class="gut">
+  <noscript>この画面の表示には JavaScript が必要です。データは map.json を参照してください。</noscript>
+  <div class="stats" id="stats"></div>
+  <section id="tab-graph">
+    <div class="toolbar">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="legend"><span><i></i>設定から確定</span><span><i class="dyn"></i>条件で変わる</span><span><i class="man"></i>手動で登録</span></div>
+    </div>
+    <div class="graphwrap">
+      <div class="canvas"><svg id="svg" role="img" aria-label="構成図"></svg></div>
+      <aside class="side" id="side"></aside>
+    </div>
+  </section>
+  <section id="tab-sites" hidden>
+    <div class="toolbar">
+      <input type="search" id="sq" placeholder="サイト名・用途・担当で検索" aria-label="サイトの検索">
+      <select id="sgroup" aria-label="グループ"></select>
+    </div>
+    <div class="groups" id="groups"></div>
+  </section>
+  <section id="tab-ledger" hidden>
+    <div class="toolbar">
+      <input type="search" id="lq" placeholder="サイト・URL・IP・担当で検索" aria-label="台帳の検索">
+      <div class="seg"><button id="lv-site" aria-pressed="true">サイトごと</button><button id="lv-be" aria-pressed="false">宛先ごと</button></div>
+      <label><input type="checkbox" id="lexp"> 証明書の期限が 30 日以内だけ</label>
+    </div>
+    <div class="tablewrap"><table id="ledger"></table></div>
+  </section>
+  <section id="tab-conf" hidden>
+    <div class="toolbar">
+      <input type="search" id="cq" list="sitenames" placeholder="サイト名を入力して設定を表示" aria-label="設定を表示するサイト">
+      <datalist id="sitenames"></datalist>
+      <span class="legend"><span class="tag">include した行は出典が青</span><span class="tag warn">http から継承した設定は黄色の背景</span></span>
+    </div>
+    <div class="conf" id="conf"></div>
+  </section>
+  <section id="tab-diag" hidden></section>
 </main>
 <script type="application/json" id="data">{{.Data}}</script>
 <script>{{.JS}}</script>

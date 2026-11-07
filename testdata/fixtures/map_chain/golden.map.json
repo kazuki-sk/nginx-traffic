@@ -643,6 +643,90 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:39",
+        "origin": "nginx",
+        "status": "conditional",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "map.example",
+        "url": "http://map.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "map.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.1.0.2:80/",
+          "http://10.1.0.3:80/",
+          "http://10.1.0.1:80/"
+        ],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:39",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:40",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:41",
+            "text": "    server_name map.example;"
+          },
+          {
+            "src": "nginx.conf:42",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:43",
+            "text": "        proxy_pass http://$pool_addr;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:45",
+            "text": "    location /fixed {"
+          },
+          {
+            "src": "nginx.conf:46",
+            "text": "        return 200 $fixed;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:48",
+            "text": "    location /ab {"
+          },
+          {
+            "src": "nginx.conf:49",
+            "text": "        return 200 \"$variant $office\";"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [],
   "warnings": []
 }

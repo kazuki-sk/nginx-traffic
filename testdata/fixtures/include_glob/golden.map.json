@@ -223,6 +223,132 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "conf.d/02-a.conf:1",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "a.example",
+        "url": "http://a.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "a.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "conf.d/02-a.conf:1",
+            "text": "server {"
+          },
+          {
+            "src": "conf.d/02-a.conf:2",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "conf.d/02-a.conf:3",
+            "text": "    server_name a.example;"
+          },
+          {
+            "src": "conf.d/02-a.conf:4",
+            "text": "    # include sub/common.inc",
+            "kind": "marker"
+          },
+          {
+            "src": "sub/common.inc:1",
+            "text": "    add_header X-Common yes;",
+            "kind": "include"
+          },
+          {
+            "src": "conf.d/02-a.conf:5",
+            "text": "    location / {"
+          },
+          {
+            "src": "conf.d/02-a.conf:5",
+            "text": "        return 200 a;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "conf.d/10-b.conf:3",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s2",
+        "server_id": "s2",
+        "proto": "http",
+        "name": "b.example",
+        "url": "http://b.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "b.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "conf.d/10-b.conf:3",
+            "text": "server {"
+          },
+          {
+            "src": "conf.d/10-b.conf:4",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "conf.d/10-b.conf:5",
+            "text": "    server_name b.example;"
+          },
+          {
+            "src": "conf.d/10-b.conf:6",
+            "text": "    # include sub/common.inc",
+            "kind": "marker"
+          },
+          {
+            "src": "sub/common.inc:1",
+            "text": "    add_header X-Common yes;",
+            "kind": "include"
+          },
+          {
+            "src": "conf.d/10-b.conf:7",
+            "text": "    location / {"
+          },
+          {
+            "src": "conf.d/10-b.conf:7",
+            "text": "        return 200 b;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [],
   "warnings": []
 }

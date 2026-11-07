@@ -57,6 +57,7 @@ func (u *upstreams) addExplicit(n *conf.Node) {
 	}
 	u.explicit[key] = up
 	u.order = append(u.order, up)
+	u.a.nodes.Upstreams[u.module+":"+name] = n
 }
 
 // parseMember parses `server address [parameters]`. Defaults per doc

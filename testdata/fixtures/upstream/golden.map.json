@@ -606,6 +606,222 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:19",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "up.example",
+        "url": "http://up.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "up.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.0.0.11:8080/",
+          "http://10.0.0.12:8080/",
+          "http://10.0.0.13:8080/",
+          "http://10.0.0.14:8080/",
+          "unix:/run/app.sock",
+          "http://10.0.0.21:8080/",
+          "http://10.0.0.41:80/",
+          "http://10.0.0.99/",
+          "unix:/run/php-fpm.sock",
+          "grpc://10.0.0.31:50051/"
+        ],
+        "upstreams": [
+          "backend",
+          "hashed",
+          "10.0.0.99:80",
+          "10.0.0.31:50051",
+          "defined_later"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:19",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:20",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:21",
+            "text": "    server_name up.example;"
+          },
+          {
+            "src": "nginx.conf:22",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "        proxy_pass http://backend;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:25",
+            "text": "    location /h/ {"
+          },
+          {
+            "src": "nginx.conf:26",
+            "text": "        proxy_pass http://hashed/;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:29",
+            "text": "    location /case/ {"
+          },
+          {
+            "src": "nginx.conf:30",
+            "text": "        proxy_pass http://Backend;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:33",
+            "text": "    location /ip/ {"
+          },
+          {
+            "src": "nginx.conf:34",
+            "text": "        proxy_pass http://10.0.0.99;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:36",
+            "text": "    location /php/ {"
+          },
+          {
+            "src": "nginx.conf:37",
+            "text": "        fastcgi_pass unix:/run/php-fpm.sock;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:39",
+            "text": "    location /grpc/ {"
+          },
+          {
+            "src": "nginx.conf:40",
+            "text": "        grpc_pass grpc://10.0.0.31:50051;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:42",
+            "text": "    location /later/ {"
+          },
+          {
+            "src": "nginx.conf:43",
+            "text": "        proxy_pass http://defined_later;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {
+      "http:backend": [
+        {
+          "src": "nginx.conf:6",
+          "text": "upstream backend {"
+        },
+        {
+          "src": "nginx.conf:7",
+          "text": "    least_conn;"
+        },
+        {
+          "src": "nginx.conf:8",
+          "text": "    server 10.0.0.11:8080 weight=5 max_fails=3 fail_timeout=30s;"
+        },
+        {
+          "src": "nginx.conf:9",
+          "text": "    server 10.0.0.12:8080 max_conns=100;"
+        },
+        {
+          "src": "nginx.conf:10",
+          "text": "    server 10.0.0.13:8080 backup;"
+        },
+        {
+          "src": "nginx.conf:11",
+          "text": "    server 10.0.0.14:8080 down;"
+        },
+        {
+          "src": "nginx.conf:12",
+          "text": "    keepalive 16;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ],
+      "http:defined_later": [
+        {
+          "src": "nginx.conf:47",
+          "text": "upstream defined_later {"
+        },
+        {
+          "src": "nginx.conf:47",
+          "text": "    server 10.0.0.41:80;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ],
+      "http:hashed": [
+        {
+          "src": "nginx.conf:14",
+          "text": "upstream hashed {"
+        },
+        {
+          "src": "nginx.conf:15",
+          "text": "    hash $request_uri consistent;"
+        },
+        {
+          "src": "nginx.conf:16",
+          "text": "    server unix:/run/app.sock;"
+        },
+        {
+          "src": "nginx.conf:17",
+          "text": "    server 10.0.0.21:8080;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ]
+    }
+  },
   "errors": [],
   "warnings": []
 }

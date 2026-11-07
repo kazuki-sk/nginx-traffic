@@ -165,3 +165,31 @@ func TestScale(t *testing.T) {
 		t.Errorf("too slow: %v", el)
 	}
 }
+
+func TestPortalWithCertificatesAndLinks(t *testing.T) {
+	d := t.TempDir()
+	os.WriteFile(filepath.Join(d, "nginx.conf"), []byte(`events {} http {
+  server { listen 443 ssl; server_name www.example.test; ssl_certificate missing.crt; ssl_certificate_key k.key; location / { return 200; } }
+}`), 0o644)
+	os.WriteFile(filepath.Join(d, "sitemap.conf"), []byte(`settings { read_certificates on; }
+annotate server www.example.test { group "公開サイト"; link 管理画面 https://www.example.test/admin/; owner web; }
+external mon { endpoint https://mon.example.test/; backend 10.0.0.9:3000; link Grafana https://mon.example.test/d/1; }
+`), 0o644)
+	res, err := Run(Options{ConfigFile: filepath.Join(d, "sitemap.conf"), NginxConf: ptr(filepath.Join(d, "nginx.conf")), OutputDir: ptr(""), Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Map.Errors) != 0 {
+		t.Fatalf("errors: %+v", res.Map.Errors)
+	}
+	s := res.Map.Portal.Sites[0]
+	if s.Group != "公開サイト" || s.GroupSource != "annotate" || s.Owner != "web" || len(s.Links) != 1 || s.Links[0].URL != "https://www.example.test/admin/" {
+		t.Fatalf("site: %+v", s)
+	}
+	if len(s.Certs) != 1 || s.Certs[0].Error != "file not found" {
+		t.Fatalf("certs: %+v", s.Certs)
+	}
+	if x := res.Map.External[0]; len(x.Links) != 1 || x.Links[0].Name != "Grafana" {
+		t.Fatalf("external links: %+v", x)
+	}
+}

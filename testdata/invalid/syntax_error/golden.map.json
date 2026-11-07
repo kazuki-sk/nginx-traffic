@@ -141,6 +141,105 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "ok.example",
+        "url": "http://ok.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "ok.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:6",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:7",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:8",
+            "text": "    server_name ok.example;"
+          },
+          {
+            "src": "nginx.conf:9",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:9",
+            "text": "        return 200 ok;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:11",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s2",
+        "server_id": "s2",
+        "proto": "http",
+        "name": "（名前なし） ",
+        "listens": [],
+        "group": "（ドメインなし）",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:11",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:12",
+            "text": "    listen 8081 server_name broken.example;"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "        return 200 broken;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [
     {
       "code": "parse-error",
