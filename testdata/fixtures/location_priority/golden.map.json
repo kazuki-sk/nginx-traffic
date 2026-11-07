@@ -1,0 +1,1002 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:5a8b4dcd0b6da62e0e449d9768d5336efe843c5289c1bf71c92977219d803771",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/location_priority/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/location_priority",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "0dcbd842262140a3c44c858582c0526eae232801ff9d12ebb9e863099984645b",
+      "size": 1242
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:8",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "loc.example",
+            "server_id": "s1",
+            "src": "nginx.conf:9"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:8"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "loc.example",
+            "kind": "exact",
+            "src": "nginx.conf:9"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "edges": [
+          {
+            "src": "nginx.conf:11",
+            "origin": "nginx",
+            "status": "static",
+            "kind": "error_page",
+            "condition": "status in (404)",
+            "target": {
+              "kind": "lit",
+              "value": "/errors/404.html"
+            },
+            "target_location": "s1/L3",
+            "raw": "error_page 404 /errors/404.html"
+          },
+          {
+            "src": "nginx.conf:12",
+            "origin": "nginx",
+            "status": "static",
+            "kind": "error_page",
+            "condition": "status in (500 502 503 504)",
+            "target": {
+              "kind": "lit",
+              "value": "@fallback"
+            },
+            "target_location": "s1/L10",
+            "raw": "error_page 500 502 503 504 @fallback"
+          }
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:14",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L1",
+            "modifier": "=",
+            "uri": "/",
+            "match_group": "exact",
+            "order": 1,
+            "handler": {
+              "src": "nginx.conf:15",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 200 \"exact root\"",
+              "target": {
+                "kind": "lit",
+                "value": "exact root"
+              },
+              "code": 200
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:17",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L2",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 2,
+            "handler": {
+              "src": "nginx.conf:18",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "try_files",
+              "raw": "try_files $uri $uri/ /index.html",
+              "target": {
+                "kind": "lit",
+                "value": "/srv/www"
+              }
+            },
+            "edges": [
+              {
+                "src": "nginx.conf:18",
+                "origin": "nginx",
+                "status": "conditional",
+                "reasons": [
+                  {
+                    "code": "filesystem-dependent",
+                    "detail": "file existence is checked at request time"
+                  }
+                ],
+                "kind": "try_files",
+                "condition": "none of $uri $uri/ exist",
+                "target": {
+                  "kind": "lit",
+                  "value": "/index.html"
+                },
+                "target_location": "s1/L2",
+                "raw": "try_files $uri $uri/ /index.html"
+              }
+            ],
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:20",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L3",
+            "modifier": "prefix",
+            "uri": "/errors/",
+            "match_group": "prefix",
+            "order": 3,
+            "internal": true,
+            "handler": {
+              "src": "nginx.conf:10",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root /srv/www",
+              "target": {
+                "kind": "lit",
+                "value": "/srv/www"
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:23",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L4",
+            "modifier": "^~",
+            "uri": "/static/",
+            "match_group": "prefix-noregex",
+            "order": 4,
+            "handler": {
+              "src": "nginx.conf:24",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "alias /srv/static/",
+              "target": {
+                "kind": "lit",
+                "value": "/srv/static/"
+              },
+              "note": "alias"
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:26",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L5",
+            "modifier": "~*",
+            "uri": "\\.(png|jpg)$",
+            "match_group": "regex",
+            "order": 5,
+            "handler": {
+              "src": "nginx.conf:10",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root /srv/www",
+              "target": {
+                "kind": "lit",
+                "value": "/srv/www"
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:29",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L6",
+            "modifier": "prefix",
+            "uri": "/api/",
+            "match_group": "prefix",
+            "order": 6,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:30",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://app",
+              "target": {
+                "kind": "lit",
+                "value": "http://app"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:30",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://app",
+                  "upstream": "app",
+                  "kind": "upstream"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ],
+            "children": [
+              {
+                "src": "nginx.conf:31",
+                "origin": "nginx",
+                "status": "static",
+                "id": "s1/L6.1",
+                "modifier": "~",
+                "uri": "^/api/v[0-9]+/admin",
+                "match_group": "regex",
+                "order": 1,
+                "handler": {
+                  "src": "nginx.conf:32",
+                  "origin": "nginx",
+                  "status": "static",
+                  "kind": "return",
+                  "raw": "return 403",
+                  "code": 403
+                },
+                "inherited": [
+                  {
+                    "directive": "root",
+                    "args": [
+                      "/srv/www"
+                    ],
+                    "from": "server",
+                    "src": "nginx.conf:10"
+                  },
+                  {
+                    "directive": "error_page",
+                    "args": [
+                      "404",
+                      "/errors/404.html"
+                    ],
+                    "from": "server",
+                    "src": "nginx.conf:11"
+                  },
+                  {
+                    "directive": "error_page",
+                    "args": [
+                      "500",
+                      "502",
+                      "503",
+                      "504",
+                      "@fallback"
+                    ],
+                    "from": "server",
+                    "src": "nginx.conf:12"
+                  }
+                ]
+              },
+              {
+                "src": "nginx.conf:34",
+                "origin": "nginx",
+                "status": "static",
+                "id": "s1/L6.2",
+                "modifier": "prefix",
+                "uri": "/api/internal/",
+                "match_group": "prefix",
+                "order": 2,
+                "auto_redirect": true,
+                "handler": {
+                  "src": "nginx.conf:35",
+                  "origin": "nginx",
+                  "status": "static",
+                  "kind": "proxy_pass",
+                  "raw": "proxy_pass http://127.0.0.1:9100",
+                  "target": {
+                    "kind": "lit",
+                    "value": "http://127.0.0.1:9100"
+                  },
+                  "backends": [
+                    {
+                      "src": "nginx.conf:35",
+                      "origin": "nginx",
+                      "status": "static",
+                      "url": "http://127.0.0.1:9100",
+                      "upstream": "127.0.0.1:9100",
+                      "kind": "address"
+                    }
+                  ]
+                },
+                "inherited": [
+                  {
+                    "directive": "proxy_set_header",
+                    "args": [
+                      "Host",
+                      "$proxy_host"
+                    ],
+                    "from": "default"
+                  },
+                  {
+                    "directive": "proxy_set_header",
+                    "args": [
+                      "Connection",
+                      "close"
+                    ],
+                    "from": "default"
+                  },
+                  {
+                    "directive": "root",
+                    "args": [
+                      "/srv/www"
+                    ],
+                    "from": "server",
+                    "src": "nginx.conf:10"
+                  },
+                  {
+                    "directive": "error_page",
+                    "args": [
+                      "404",
+                      "/errors/404.html"
+                    ],
+                    "from": "server",
+                    "src": "nginx.conf:11"
+                  },
+                  {
+                    "directive": "error_page",
+                    "args": [
+                      "500",
+                      "502",
+                      "503",
+                      "504",
+                      "@fallback"
+                    ],
+                    "from": "server",
+                    "src": "nginx.conf:12"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:38",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L7",
+            "modifier": "~",
+            "uri": "^/old/(.*)$",
+            "match_group": "regex",
+            "order": 7,
+            "rewrite": {
+              "edges": [
+                {
+                  "src": "nginx.conf:39",
+                  "origin": "nginx",
+                  "status": "dynamic",
+                  "reasons": [
+                    {
+                      "code": "request-dependent",
+                      "detail": "$1: regex capture"
+                    },
+                    {
+                      "code": "request-dependent",
+                      "detail": "target location cannot be determined statically"
+                    }
+                  ],
+                  "kind": "rewrite-last",
+                  "condition": "$uri ~ ^/old/(.*)$",
+                  "target": {
+                    "kind": "concat",
+                    "parts": [
+                      {
+                        "kind": "lit",
+                        "value": "/new/"
+                      },
+                      {
+                        "kind": "sym",
+                        "var": "$1",
+                        "reason": "request-dependent",
+                        "detail": "regex capture"
+                      }
+                    ],
+                    "had_vars": true
+                  },
+                  "raw": "rewrite ^/old/(.*)$ /new/$1 last"
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:10",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root /srv/www",
+              "target": {
+                "kind": "lit",
+                "value": "/srv/www"
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:41",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L8",
+            "modifier": "prefix",
+            "uri": "/legacy",
+            "match_group": "prefix",
+            "order": 8,
+            "rewrite": {
+              "edges": [
+                {
+                  "src": "nginx.conf:42",
+                  "origin": "nginx",
+                  "status": "static",
+                  "kind": "rewrite-last",
+                  "target": {
+                    "kind": "lit",
+                    "value": "/api/v2/legacy"
+                  },
+                  "target_location": "s1/L6",
+                  "raw": "rewrite ^ /api/v2/legacy last"
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:42",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "internal-redirect",
+              "raw": "rewrite ^ /api/v2/legacy last",
+              "target": {
+                "kind": "lit",
+                "value": "/api/v2/legacy"
+              },
+              "note": "continues in s1/L6"
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:44",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L9",
+            "modifier": "prefix",
+            "uri": "/go-home",
+            "match_group": "prefix",
+            "order": 9,
+            "rewrite": {
+              "edges": [
+                {
+                  "src": "nginx.conf:45",
+                  "origin": "nginx",
+                  "status": "static",
+                  "kind": "redirect",
+                  "target": {
+                    "kind": "lit",
+                    "value": "https://loc.example/"
+                  },
+                  "code": 301,
+                  "raw": "rewrite ^ https://loc.example/ permanent"
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:45",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "redirect",
+              "raw": "rewrite ^ https://loc.example/ permanent",
+              "target": {
+                "kind": "lit",
+                "value": "https://loc.example/"
+              },
+              "code": 301
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:47",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L10",
+            "modifier": "@",
+            "uri": "@fallback",
+            "match_group": "named",
+            "order": 10,
+            "handler": {
+              "src": "nginx.conf:48",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://app",
+              "target": {
+                "kind": "lit",
+                "value": "http://app"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:48",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://app",
+                  "upstream": "app",
+                  "kind": "upstream"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/srv/www"
+                ],
+                "from": "server",
+                "src": "nginx.conf:10"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "404",
+                  "/errors/404.html"
+                ],
+                "from": "server",
+                "src": "nginx.conf:11"
+              },
+              {
+                "directive": "error_page",
+                "args": [
+                  "500",
+                  "502",
+                  "503",
+                  "504",
+                  "@fallback"
+                ],
+                "from": "server",
+                "src": "nginx.conf:12"
+              }
+            ]
+          }
+        ],
+        "inherited": [
+          {
+            "directive": "root",
+            "args": [
+              "/srv/www"
+            ],
+            "from": "here",
+            "src": "nginx.conf:10"
+          },
+          {
+            "directive": "error_page",
+            "args": [
+              "404",
+              "/errors/404.html"
+            ],
+            "from": "here",
+            "src": "nginx.conf:11"
+          },
+          {
+            "directive": "error_page",
+            "args": [
+              "500",
+              "502",
+              "503",
+              "504",
+              "@fallback"
+            ],
+            "from": "here",
+            "src": "nginx.conf:12"
+          }
+        ]
+      }
+    ],
+    "upstreams": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "name": "app",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:6",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:9000",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s1/L6",
+          "s1/L10"
+        ]
+      },
+      {
+        "src": "nginx.conf:35",
+        "origin": "nginx",
+        "status": "static",
+        "name": "127.0.0.1:9100",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:35",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:9100",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s1/L6.2"
+        ]
+      }
+    ],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

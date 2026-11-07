@@ -1,0 +1,772 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:b36412c968974d0ad2e4a7b0c0b624f8ed0ed66fcd3d111ebbf9719700724d24",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/publish_sample/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/publish_sample",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "<REPO>/deploy/nginx/nginx-sitemap.conf",
+      "sha256": "5249cfd94f4679de301ac5ddaf616724738b137a82701fe6d9ed93a488df4174",
+      "size": 1673,
+      "included_from": [
+        "nginx.conf:11"
+      ]
+    },
+    {
+      "path": "nginx.conf",
+      "sha256": "878a31950b5b499688ac7bd662a02b3369728f026cbdf3f3a662186ac87b6405",
+      "size": 283
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:16",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:10.0.0.10:443",
+        "proto": "http",
+        "addr": "10.0.0.10",
+        "port": 443,
+        "family": "inet",
+        "ssl": true,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s2",
+          "explicit": false
+        },
+        "servers": [
+          "s2"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "nginx-map.lab.internal",
+            "server_id": "s2",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:18"
+          }
+        ],
+        "declared_at": [
+          "<REPO>/deploy/nginx/nginx-sitemap.conf:16"
+        ]
+      },
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "app.example",
+            "server_id": "s1",
+            "src": "nginx.conf:7"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:6"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:5",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "app.example",
+            "kind": "exact",
+            "src": "nginx.conf:7"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:8",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "nginx.conf:8",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 200 app",
+              "target": {
+                "kind": "lit",
+                "value": "app"
+              },
+              "code": 200
+            }
+          }
+        ]
+      },
+      {
+        "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:14",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s2",
+        "names": [
+          {
+            "name": "nginx-map.lab.internal",
+            "kind": "exact",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:18"
+          }
+        ],
+        "listens": [
+          "http:10.0.0.10:443"
+        ],
+        "locations": [
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:40",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L1",
+            "modifier": "=",
+            "uri": "/",
+            "match_group": "exact",
+            "order": 1,
+            "handler": {
+              "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:41",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "try_files",
+              "raw": "try_files /index.html =404",
+              "target": {
+                "kind": "lit",
+                "value": "/var/lib/nginx-sitemap"
+              }
+            },
+            "edges": [
+              {
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:41",
+                "origin": "nginx",
+                "status": "conditional",
+                "reasons": [
+                  {
+                    "code": "filesystem-dependent",
+                    "detail": "file existence is checked at request time"
+                  }
+                ],
+                "kind": "return",
+                "condition": "none of /index.html exist",
+                "code": 404,
+                "raw": "try_files /index.html =404"
+              }
+            ],
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "Cache-Control",
+                  "no-store",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Content-Type-Options",
+                  "nosniff",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "Referrer-Policy",
+                  "no-referrer",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/var/lib/nginx-sitemap"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23"
+              },
+              {
+                "directive": "index",
+                "args": [
+                  "index.html"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "10.0.0.0/8"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "192.168.0.0/16"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28"
+              },
+              {
+                "directive": "deny",
+                "args": [
+                  "all"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29"
+              },
+              {
+                "directive": "http2",
+                "args": [
+                  "on"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17"
+              }
+            ]
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:43",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L2",
+            "modifier": "=",
+            "uri": "/index.html",
+            "match_group": "exact",
+            "order": 2,
+            "handler": {
+              "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root /var/lib/nginx-sitemap",
+              "target": {
+                "kind": "lit",
+                "value": "/var/lib/nginx-sitemap"
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "Cache-Control",
+                  "no-store",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Content-Type-Options",
+                  "nosniff",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "Referrer-Policy",
+                  "no-referrer",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/var/lib/nginx-sitemap"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23"
+              },
+              {
+                "directive": "index",
+                "args": [
+                  "index.html"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "10.0.0.0/8"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "192.168.0.0/16"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28"
+              },
+              {
+                "directive": "deny",
+                "args": [
+                  "all"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29"
+              },
+              {
+                "directive": "http2",
+                "args": [
+                  "on"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17"
+              }
+            ]
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:44",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L3",
+            "modifier": "=",
+            "uri": "/map.json",
+            "match_group": "exact",
+            "order": 3,
+            "handler": {
+              "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root /var/lib/nginx-sitemap",
+              "target": {
+                "kind": "lit",
+                "value": "/var/lib/nginx-sitemap"
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "Cache-Control",
+                  "no-store",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Content-Type-Options",
+                  "nosniff",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "Referrer-Policy",
+                  "no-referrer",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/var/lib/nginx-sitemap"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23"
+              },
+              {
+                "directive": "index",
+                "args": [
+                  "index.html"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "10.0.0.0/8"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "192.168.0.0/16"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28"
+              },
+              {
+                "directive": "deny",
+                "args": [
+                  "all"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29"
+              },
+              {
+                "directive": "http2",
+                "args": [
+                  "on"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17"
+              }
+            ]
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:47",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L4",
+            "modifier": "=",
+            "uri": "/map.dot",
+            "match_group": "exact",
+            "order": 4,
+            "handler": {
+              "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root /var/lib/nginx-sitemap",
+              "target": {
+                "kind": "lit",
+                "value": "/var/lib/nginx-sitemap"
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "Cache-Control",
+                  "no-store",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Content-Type-Options",
+                  "nosniff",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "Referrer-Policy",
+                  "no-referrer",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/var/lib/nginx-sitemap"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23"
+              },
+              {
+                "directive": "index",
+                "args": [
+                  "index.html"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "10.0.0.0/8"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "192.168.0.0/16"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28"
+              },
+              {
+                "directive": "deny",
+                "args": [
+                  "all"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29"
+              },
+              {
+                "directive": "http2",
+                "args": [
+                  "on"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17"
+              }
+            ]
+          },
+          {
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:51",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L5",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 5,
+            "handler": {
+              "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:52",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 404",
+              "code": 404
+            },
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "Cache-Control",
+                  "no-store",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Content-Type-Options",
+                  "nosniff",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33"
+              },
+              {
+                "directive": "add_header",
+                "args": [
+                  "Referrer-Policy",
+                  "no-referrer",
+                  "always"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34"
+              },
+              {
+                "directive": "root",
+                "args": [
+                  "/var/lib/nginx-sitemap"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23"
+              },
+              {
+                "directive": "index",
+                "args": [
+                  "index.html"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "10.0.0.0/8"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+              },
+              {
+                "directive": "allow",
+                "args": [
+                  "192.168.0.0/16"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28"
+              },
+              {
+                "directive": "deny",
+                "args": [
+                  "all"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29"
+              },
+              {
+                "directive": "http2",
+                "args": [
+                  "on"
+                ],
+                "from": "server",
+                "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17"
+              }
+            ]
+          }
+        ],
+        "inherited": [
+          {
+            "directive": "add_header",
+            "args": [
+              "Cache-Control",
+              "no-store",
+              "always"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:32"
+          },
+          {
+            "directive": "add_header",
+            "args": [
+              "X-Content-Type-Options",
+              "nosniff",
+              "always"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:33"
+          },
+          {
+            "directive": "add_header",
+            "args": [
+              "Referrer-Policy",
+              "no-referrer",
+              "always"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:34"
+          },
+          {
+            "directive": "root",
+            "args": [
+              "/var/lib/nginx-sitemap"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:23"
+          },
+          {
+            "directive": "index",
+            "args": [
+              "index.html"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:24"
+          },
+          {
+            "directive": "allow",
+            "args": [
+              "10.0.0.0/8"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:27"
+          },
+          {
+            "directive": "allow",
+            "args": [
+              "192.168.0.0/16"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:28"
+          },
+          {
+            "directive": "deny",
+            "args": [
+              "all"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:29"
+          },
+          {
+            "directive": "http2",
+            "args": [
+              "on"
+            ],
+            "from": "here",
+            "src": "<REPO>/deploy/nginx/nginx-sitemap.conf:17"
+          }
+        ]
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

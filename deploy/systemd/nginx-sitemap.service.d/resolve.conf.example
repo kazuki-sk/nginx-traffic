@@ -1,0 +1,9 @@
+# Copy to /etc/systemd/system/nginx-sitemap.service.d/resolve.conf ONLY when
+# `resolve on;` is set in sitemap.conf (generation-time DNS snapshot).
+# This is the only mode in which the tool uses the network (DNS lookups of
+# names found in the configuration; no other traffic).
+[Service]
+PrivateNetwork=no
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# /etc/resolv.conf and /etc/hosts must stay readable (ProtectSystem=strict
+# keeps /etc readable).

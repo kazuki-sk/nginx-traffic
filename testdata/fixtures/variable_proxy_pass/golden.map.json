@@ -1,0 +1,536 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:22c30d0e81b99584eb99e4203d972b851b0315344e45bcc232a4d35544ac116f",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/variable_proxy_pass/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/variable_proxy_pass",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "ddf31c64ebf3703707ecc8483a556506555fcc8931f38114a766fb1eb882dc0b",
+      "size": 724
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:14",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "var.example",
+            "server_id": "s1",
+            "src": "nginx.conf:15"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:14"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:13",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "var.example",
+            "kind": "exact",
+            "src": "nginx.conf:15"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:16",
+            "origin": "nginx",
+            "status": "conditional",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:17",
+              "origin": "nginx",
+              "status": "conditional",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://$color",
+              "target": {
+                "kind": "concat",
+                "parts": [
+                  {
+                    "kind": "lit",
+                    "value": "http://"
+                  },
+                  {
+                    "kind": "switch",
+                    "on": {
+                      "kind": "sym",
+                      "var": "$cookie_deploy",
+                      "reason": "request-dependent",
+                      "had_vars": true
+                    },
+                    "table": "map $cookie_deploy $color",
+                    "cases": [
+                      {
+                        "match": {
+                          "kind": "exact",
+                          "pattern": "canary"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "green"
+                        }
+                      }
+                    ],
+                    "default": {
+                      "kind": "lit",
+                      "value": "blue"
+                    },
+                    "src": "nginx.conf:9"
+                  }
+                ],
+                "had_vars": true
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:17",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $cookie_deploy $color = canary",
+                  "url": "http://green",
+                  "upstream": "green",
+                  "kind": "upstream"
+                },
+                {
+                  "src": "nginx.conf:17",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $cookie_deploy $color default",
+                  "url": "http://blue",
+                  "upstream": "blue",
+                  "kind": "upstream"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "resolver",
+                "args": [
+                  "127.0.0.53",
+                  "valid=30s"
+                ],
+                "from": "http",
+                "src": "nginx.conf:6"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:19",
+            "origin": "nginx",
+            "status": "dynamic",
+            "reasons": [
+              {
+                "code": "request-dependent",
+                "detail": "$host"
+              }
+            ],
+            "id": "s1/L2",
+            "modifier": "prefix",
+            "uri": "/host/",
+            "match_group": "prefix",
+            "order": 2,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:20",
+              "origin": "nginx",
+              "status": "dynamic",
+              "reasons": [
+                {
+                  "code": "request-dependent",
+                  "detail": "$host"
+                }
+              ],
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://$host:8080",
+              "target": {
+                "kind": "concat",
+                "parts": [
+                  {
+                    "kind": "lit",
+                    "value": "http://"
+                  },
+                  {
+                    "kind": "sym",
+                    "var": "$host",
+                    "reason": "request-dependent"
+                  },
+                  {
+                    "kind": "lit",
+                    "value": ":8080"
+                  }
+                ],
+                "had_vars": true
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:20",
+                  "origin": "nginx",
+                  "status": "dynamic",
+                  "reasons": [
+                    {
+                      "code": "request-dependent",
+                      "detail": "$host"
+                    }
+                  ],
+                  "url": "http://${host}:8080",
+                  "kind": "dynamic"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "resolver",
+                "args": [
+                  "127.0.0.53",
+                  "valid=30s"
+                ],
+                "from": "http",
+                "src": "nginx.conf:6"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:22",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L3",
+            "modifier": "prefix",
+            "uri": "/const/",
+            "match_group": "prefix",
+            "order": 3,
+            "auto_redirect": true,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:23",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$target",
+                  "value": {
+                    "kind": "lit",
+                    "value": "10.2.0.9:8080"
+                  }
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:24",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://$target",
+              "target": {
+                "kind": "lit",
+                "value": "http://10.2.0.9:8080",
+                "had_vars": true
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:24",
+                  "origin": "nginx",
+                  "status": "resolved",
+                  "url": "http://10.2.0.9:8080",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "resolver",
+                "args": [
+                  "127.0.0.53",
+                  "valid=30s"
+                ],
+                "from": "http",
+                "src": "nginx.conf:6"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:26",
+            "origin": "nginx",
+            "status": "dynamic",
+            "reasons": [
+              {
+                "code": "runtime-dns",
+                "detail": "resolved per request by the configured resolver"
+              }
+            ],
+            "id": "s1/L4",
+            "modifier": "prefix",
+            "uri": "/dns/",
+            "match_group": "prefix",
+            "order": 4,
+            "auto_redirect": true,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:27",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$svc",
+                  "value": {
+                    "kind": "lit",
+                    "value": "api.internal.example"
+                  }
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:28",
+              "origin": "nginx",
+              "status": "dynamic",
+              "reasons": [
+                {
+                  "code": "runtime-dns",
+                  "detail": "resolved per request by the configured resolver"
+                }
+              ],
+              "kind": "proxy_pass",
+              "raw": "proxy_pass https://$svc",
+              "target": {
+                "kind": "lit",
+                "value": "https://api.internal.example",
+                "had_vars": true
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:28",
+                  "origin": "nginx",
+                  "status": "dynamic",
+                  "reasons": [
+                    {
+                      "code": "runtime-dns",
+                      "detail": "resolved per request by the configured resolver"
+                    }
+                  ],
+                  "url": "https://api.internal.example",
+                  "kind": "name",
+                  "dns": "runtime-resolver"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "resolver",
+                "args": [
+                  "127.0.0.53",
+                  "valid=30s"
+                ],
+                "from": "http",
+                "src": "nginx.conf:6"
+              }
+            ]
+          }
+        ],
+        "inherited": [
+          {
+            "directive": "resolver",
+            "args": [
+              "127.0.0.53",
+              "valid=30s"
+            ],
+            "from": "http",
+            "src": "nginx.conf:6"
+          }
+        ]
+      }
+    ],
+    "upstreams": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "name": "blue",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:7",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.2.0.1:80",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s1/L1"
+        ]
+      },
+      {
+        "src": "nginx.conf:8",
+        "origin": "nginx",
+        "status": "static",
+        "name": "green",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:8",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.2.0.2:80",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s1/L1"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "src": "nginx.conf:9",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "map",
+        "var": "color",
+        "source": "$cookie_deploy",
+        "entries": [
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "canary"
+            },
+            "value": "green",
+            "src": "nginx.conf:11"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "blue",
+          "src": "nginx.conf:10"
+        }
+      }
+    ]
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

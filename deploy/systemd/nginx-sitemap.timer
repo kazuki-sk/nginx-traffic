@@ -1,0 +1,11 @@
+[Unit]
+Description=Regenerate nginx configuration sitemap every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+RandomizedDelaySec=60
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

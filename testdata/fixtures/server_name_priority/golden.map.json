@@ -1,0 +1,417 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:4b56147863902c625f5897b9a3e024120f2dc3fb7b1457a1dd0df2b02e563c88",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/server_name_priority/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/server_name_priority",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "91f56da1284d2d1c96982f9fbc518a09defb5f8c1ab532ada1ecc5838cc7d3ba",
+      "size": 1026
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "empty",
+            "name": "",
+            "server_id": "s7",
+            "src": "nginx.conf:38"
+          },
+          {
+            "rank": 2,
+            "group": 1,
+            "kind": "exact",
+            "name": "www.example.com",
+            "server_id": "s2",
+            "src": "nginx.conf:13"
+          },
+          {
+            "rank": 3,
+            "group": 1,
+            "kind": "exact",
+            "name": "www.example.com",
+            "server_id": "s8",
+            "src": "nginx.conf:44",
+            "ignored": "conflicting server name, s2 wins"
+          },
+          {
+            "rank": 4,
+            "group": 2,
+            "kind": "leading-wildcard",
+            "name": "*.api.example.com",
+            "server_id": "s4",
+            "src": "nginx.conf:23"
+          },
+          {
+            "rank": 5,
+            "group": 2,
+            "kind": "leading-wildcard",
+            "name": "*.example.com",
+            "server_id": "s3",
+            "src": "nginx.conf:18"
+          },
+          {
+            "rank": 6,
+            "group": 2,
+            "kind": "dot-wildcard",
+            "name": ".dot.example",
+            "server_id": "s6",
+            "src": "nginx.conf:33"
+          },
+          {
+            "rank": 7,
+            "group": 3,
+            "kind": "trailing-wildcard",
+            "name": "www.example.*",
+            "server_id": "s5",
+            "src": "nginx.conf:28"
+          },
+          {
+            "rank": 8,
+            "group": 4,
+            "kind": "regex",
+            "name": "~^(?\u003csub\u003e[a-z]+)\\.regex\\.example$",
+            "server_id": "s1",
+            "src": "nginx.conf:8"
+          },
+          {
+            "rank": 9,
+            "group": 4,
+            "kind": "regex",
+            "name": "~^www\\d+\\.example\\.net$",
+            "server_id": "s7",
+            "src": "nginx.conf:38"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:7",
+          "nginx.conf:12",
+          "nginx.conf:17",
+          "nginx.conf:22",
+          "nginx.conf:27",
+          "nginx.conf:32",
+          "nginx.conf:37",
+          "nginx.conf:43"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "~^(?\u003csub\u003e[a-z]+)\\.regex\\.example$",
+            "kind": "regex",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:9",
+          "origin": "nginx",
+          "status": "dynamic",
+          "reasons": [
+            {
+              "code": "request-dependent",
+              "detail": "$sub: named regex capture"
+            }
+          ],
+          "kind": "return",
+          "raw": "return 200 \"regex1 $sub\"",
+          "target": {
+            "kind": "concat",
+            "parts": [
+              {
+                "kind": "lit",
+                "value": "regex1 "
+              },
+              {
+                "kind": "sym",
+                "var": "$sub",
+                "reason": "request-dependent",
+                "detail": "named regex capture"
+              }
+            ],
+            "had_vars": true
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:11",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s2",
+        "names": [
+          {
+            "name": "www.example.com",
+            "kind": "exact",
+            "src": "nginx.conf:13"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:14",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 exact",
+          "target": {
+            "kind": "lit",
+            "value": "exact"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:16",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s3",
+        "names": [
+          {
+            "name": "*.example.com",
+            "kind": "leading-wildcard",
+            "src": "nginx.conf:18"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:19",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 leading",
+          "target": {
+            "kind": "lit",
+            "value": "leading"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:21",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s4",
+        "names": [
+          {
+            "name": "*.api.example.com",
+            "kind": "leading-wildcard",
+            "src": "nginx.conf:23"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:24",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 leading-longer",
+          "target": {
+            "kind": "lit",
+            "value": "leading-longer"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:26",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s5",
+        "names": [
+          {
+            "name": "www.example.*",
+            "kind": "trailing-wildcard",
+            "src": "nginx.conf:28"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:29",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 trailing",
+          "target": {
+            "kind": "lit",
+            "value": "trailing"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:31",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s6",
+        "names": [
+          {
+            "name": ".dot.example",
+            "kind": "dot-wildcard",
+            "src": "nginx.conf:33"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:34",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 dot",
+          "target": {
+            "kind": "lit",
+            "value": "dot"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:36",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s7",
+        "names": [
+          {
+            "name": "~^www\\d+\\.example\\.net$",
+            "kind": "regex",
+            "src": "nginx.conf:38"
+          },
+          {
+            "name": "",
+            "kind": "empty",
+            "src": "nginx.conf:38"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:39",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 regex2",
+          "target": {
+            "kind": "lit",
+            "value": "regex2"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:42",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s8",
+        "names": [
+          {
+            "name": "www.example.com",
+            "kind": "exact",
+            "src": "nginx.conf:44"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:45",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 dup",
+          "target": {
+            "kind": "lit",
+            "value": "dup"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": [
+    {
+      "code": "conflicting-server-name",
+      "message": "conflicting server name \"www.example.com\" on http:*:8080, ignored",
+      "src": "nginx.conf:44"
+    }
+  ]
+}

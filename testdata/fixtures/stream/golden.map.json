@@ -1,0 +1,383 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:4169d713506109fc8ddbd082065937f30587dc3cf8cf82d71807f63abaa626e7",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/stream/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/stream",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "a43484034652842c34f7ae65e2109ed92a62ceb8d39f08910fbf62d9ced0d3f8",
+      "size": 652
+    }
+  ],
+  "http": null,
+  "stream": {
+    "listens": [
+      {
+        "src": "nginx.conf:26",
+        "origin": "nginx",
+        "status": "static",
+        "id": "stream-tcp:*:443",
+        "proto": "stream-tcp",
+        "addr": "*",
+        "port": 443,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "t3",
+          "explicit": false
+        },
+        "servers": [
+          "t3"
+        ],
+        "name_index": [],
+        "declared_at": [
+          "nginx.conf:26"
+        ]
+      },
+      {
+        "src": "nginx.conf:18",
+        "origin": "nginx",
+        "status": "static",
+        "id": "stream-tcp:*:5432",
+        "proto": "stream-tcp",
+        "addr": "*",
+        "port": 5432,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "t1",
+          "explicit": false
+        },
+        "servers": [
+          "t1"
+        ],
+        "name_index": [],
+        "declared_at": [
+          "nginx.conf:18"
+        ]
+      },
+      {
+        "src": "nginx.conf:31",
+        "origin": "nginx",
+        "status": "static",
+        "id": "stream-tcp:*:9999",
+        "proto": "stream-tcp",
+        "addr": "*",
+        "port": 9999,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "t4",
+          "explicit": false
+        },
+        "servers": [
+          "t4"
+        ],
+        "name_index": [],
+        "declared_at": [
+          "nginx.conf:31"
+        ]
+      },
+      {
+        "src": "nginx.conf:22",
+        "origin": "nginx",
+        "status": "static",
+        "id": "stream-udp:*:53",
+        "proto": "stream-udp",
+        "addr": "*",
+        "port": 53,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "t2",
+          "explicit": false
+        },
+        "servers": [
+          "t2"
+        ],
+        "name_index": [],
+        "declared_at": [
+          "nginx.conf:22"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:17",
+        "origin": "nginx",
+        "status": "static",
+        "id": "t1",
+        "listens": [
+          "stream-tcp:*:5432"
+        ],
+        "handler": {
+          "src": "nginx.conf:19",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "proxy_pass",
+          "raw": "proxy_pass db",
+          "target": {
+            "kind": "lit",
+            "value": "db"
+          },
+          "backends": [
+            {
+              "src": "nginx.conf:19",
+              "origin": "nginx",
+              "status": "static",
+              "url": "db",
+              "upstream": "db",
+              "kind": "upstream"
+            }
+          ]
+        }
+      },
+      {
+        "src": "nginx.conf:21",
+        "origin": "nginx",
+        "status": "static",
+        "id": "t2",
+        "listens": [
+          "stream-udp:*:53"
+        ],
+        "handler": {
+          "src": "nginx.conf:23",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "proxy_pass",
+          "raw": "proxy_pass dns_up",
+          "target": {
+            "kind": "lit",
+            "value": "dns_up"
+          },
+          "backends": [
+            {
+              "src": "nginx.conf:23",
+              "origin": "nginx",
+              "status": "static",
+              "url": "dns_up",
+              "upstream": "dns_up",
+              "kind": "upstream"
+            }
+          ]
+        }
+      },
+      {
+        "src": "nginx.conf:25",
+        "origin": "nginx",
+        "status": "conditional",
+        "id": "t3",
+        "listens": [
+          "stream-tcp:*:443"
+        ],
+        "handler": {
+          "src": "nginx.conf:28",
+          "origin": "nginx",
+          "status": "conditional",
+          "kind": "proxy_pass",
+          "raw": "proxy_pass $sni_backend",
+          "target": {
+            "kind": "switch",
+            "on": {
+              "kind": "sym",
+              "var": "$ssl_preread_server_name",
+              "reason": "connection-dependent",
+              "had_vars": true
+            },
+            "table": "map $ssl_preread_server_name $sni_backend",
+            "cases": [
+              {
+                "match": {
+                  "kind": "exact",
+                  "pattern": "a.tls.example"
+                },
+                "value": {
+                  "kind": "lit",
+                  "value": "10.3.1.2:443"
+                }
+              }
+            ],
+            "default": {
+              "kind": "lit",
+              "value": "10.3.1.1:443"
+            },
+            "src": "nginx.conf:13",
+            "had_vars": true
+          },
+          "backends": [
+            {
+              "src": "nginx.conf:28",
+              "origin": "nginx",
+              "status": "conditional",
+              "when": "map $ssl_preread_server_name $sni_backend = a.tls.example",
+              "url": "10.3.1.2:443",
+              "kind": "address"
+            },
+            {
+              "src": "nginx.conf:28",
+              "origin": "nginx",
+              "status": "conditional",
+              "when": "map $ssl_preread_server_name $sni_backend default",
+              "url": "10.3.1.1:443",
+              "kind": "address"
+            }
+          ]
+        },
+        "inherited": [
+          {
+            "directive": "ssl_preread",
+            "args": [
+              "on"
+            ],
+            "from": "here",
+            "src": "nginx.conf:27"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:30",
+        "origin": "nginx",
+        "status": "static",
+        "id": "t4",
+        "listens": [
+          "stream-tcp:*:9999"
+        ],
+        "handler": {
+          "src": "nginx.conf:32",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return hello\\n",
+          "target": {
+            "kind": "lit",
+            "value": "hello\\n"
+          }
+        }
+      }
+    ],
+    "upstreams": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "name": "db",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:7",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.3.0.1:5432",
+            "weight": 2,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          },
+          {
+            "src": "nginx.conf:8",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.3.0.2:5432",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": true,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "t1"
+        ]
+      },
+      {
+        "src": "nginx.conf:10",
+        "origin": "nginx",
+        "status": "static",
+        "name": "dns_up",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:11",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.3.0.53:53",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "t2"
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "src": "nginx.conf:13",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "map",
+        "var": "sni_backend",
+        "source": "$ssl_preread_server_name",
+        "entries": [
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "a.tls.example"
+            },
+            "value": "10.3.1.2:443",
+            "src": "nginx.conf:15"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "10.3.1.1:443",
+          "src": "nginx.conf:14"
+        }
+      }
+    ]
+  },
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

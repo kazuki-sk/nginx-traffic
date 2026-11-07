@@ -1,0 +1,648 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:1ecd503a05568d509ef8125a1cf0d285085f8a91adc09db6da058fe7438482e6",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/map_chain/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/map_chain",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "642769754602c176df26d066421ad41896bd25dd92df1abec175c2d8efc7bb69",
+      "size": 1134
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:40",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "map.example",
+            "server_id": "s1",
+            "src": "nginx.conf:41"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:40"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:39",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "map.example",
+            "kind": "exact",
+            "src": "nginx.conf:41"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:42",
+            "origin": "nginx",
+            "status": "conditional",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:43",
+              "origin": "nginx",
+              "status": "conditional",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://$pool_addr",
+              "target": {
+                "kind": "concat",
+                "parts": [
+                  {
+                    "kind": "lit",
+                    "value": "http://"
+                  },
+                  {
+                    "kind": "switch",
+                    "on": {
+                      "kind": "sym",
+                      "var": "$host",
+                      "reason": "request-dependent",
+                      "had_vars": true
+                    },
+                    "table": "map $host $tenant → $pool → $pool_addr",
+                    "cases": [
+                      {
+                        "match": {
+                          "kind": "exact",
+                          "pattern": "a.example.com"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "10.1.0.2:80",
+                          "had_vars": true
+                        }
+                      },
+                      {
+                        "match": {
+                          "kind": "leading-wildcard",
+                          "pattern": "*.b.example"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "10.1.0.3:80",
+                          "had_vars": true
+                        }
+                      },
+                      {
+                        "match": {
+                          "kind": "trailing-wildcard",
+                          "pattern": "www.c.*"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "10.1.0.1:80",
+                          "had_vars": true
+                        }
+                      },
+                      {
+                        "match": {
+                          "kind": "regex",
+                          "pattern": "^t(?\u003cnum\u003e\\d+)\\."
+                        },
+                        "value": {
+                          "kind": "switch",
+                          "on": {
+                            "kind": "concat",
+                            "parts": [
+                              {
+                                "kind": "lit",
+                                "value": "tenant"
+                              },
+                              {
+                                "kind": "sym",
+                                "var": "$num",
+                                "reason": "unknown-variable",
+                                "detail": "not a known built-in, map, geo, split_clients or set variable"
+                              }
+                            ],
+                            "had_vars": true
+                          },
+                          "table": "map $tenant $pool → $pool_addr",
+                          "cases": [
+                            {
+                              "match": {
+                                "kind": "exact",
+                                "pattern": "alpha"
+                              },
+                              "value": {
+                                "kind": "lit",
+                                "value": "10.1.0.2:80",
+                                "had_vars": true
+                              }
+                            },
+                            {
+                              "match": {
+                                "kind": "exact",
+                                "pattern": "beta"
+                              },
+                              "value": {
+                                "kind": "lit",
+                                "value": "10.1.0.3:80",
+                                "had_vars": true
+                              }
+                            }
+                          ],
+                          "default": {
+                            "kind": "lit",
+                            "value": "10.1.0.1:80",
+                            "had_vars": true
+                          },
+                          "src": "nginx.conf:14",
+                          "had_vars": true
+                        }
+                      }
+                    ],
+                    "default": {
+                      "kind": "lit",
+                      "value": "10.1.0.1:80",
+                      "had_vars": true
+                    },
+                    "src": "nginx.conf:6",
+                    "had_vars": true
+                  }
+                ],
+                "had_vars": true
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr = a.example.com",
+                  "url": "http://10.1.0.2:80",
+                  "kind": "address"
+                },
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr leading-wildcard *.b.example",
+                  "url": "http://10.1.0.3:80",
+                  "kind": "address"
+                },
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr trailing-wildcard www.c.*",
+                  "url": "http://10.1.0.1:80",
+                  "kind": "address"
+                },
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr ~ ^t(?\u003cnum\u003e\\d+)\\. \u0026\u0026 map $tenant $pool → $pool_addr = alpha",
+                  "url": "http://10.1.0.2:80",
+                  "kind": "address"
+                },
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr ~ ^t(?\u003cnum\u003e\\d+)\\. \u0026\u0026 map $tenant $pool → $pool_addr = beta",
+                  "url": "http://10.1.0.3:80",
+                  "kind": "address"
+                },
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr ~ ^t(?\u003cnum\u003e\\d+)\\. \u0026\u0026 map $tenant $pool → $pool_addr default",
+                  "url": "http://10.1.0.1:80",
+                  "kind": "address"
+                },
+                {
+                  "src": "nginx.conf:43",
+                  "origin": "nginx",
+                  "status": "conditional",
+                  "when": "map $host $tenant → $pool → $pool_addr default",
+                  "url": "http://10.1.0.1:80",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:45",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L2",
+            "modifier": "prefix",
+            "uri": "/fixed",
+            "match_group": "prefix",
+            "order": 2,
+            "handler": {
+              "src": "nginx.conf:46",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "return",
+              "raw": "return 200 $fixed",
+              "target": {
+                "kind": "lit",
+                "value": "yes",
+                "had_vars": true
+              },
+              "code": 200
+            }
+          },
+          {
+            "src": "nginx.conf:48",
+            "origin": "nginx",
+            "status": "conditional",
+            "id": "s1/L3",
+            "modifier": "prefix",
+            "uri": "/ab",
+            "match_group": "prefix",
+            "order": 3,
+            "handler": {
+              "src": "nginx.conf:49",
+              "origin": "nginx",
+              "status": "conditional",
+              "kind": "return",
+              "raw": "return 200 \"$variant $office\"",
+              "target": {
+                "kind": "concat",
+                "parts": [
+                  {
+                    "kind": "switch",
+                    "on": {
+                      "kind": "concat",
+                      "parts": [
+                        {
+                          "kind": "sym",
+                          "var": "$remote_addr",
+                          "reason": "connection-dependent"
+                        },
+                        {
+                          "kind": "lit",
+                          "value": "AAA"
+                        }
+                      ],
+                      "had_vars": true
+                    },
+                    "table": "split_clients ${remote_addr}AAA $variant",
+                    "cases": [
+                      {
+                        "match": {
+                          "kind": "percent",
+                          "pattern": "10%"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "a"
+                        }
+                      },
+                      {
+                        "match": {
+                          "kind": "percent",
+                          "pattern": "20%"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "b"
+                        }
+                      }
+                    ],
+                    "default": {
+                      "kind": "lit",
+                      "value": "c"
+                    },
+                    "src": "nginx.conf:29"
+                  },
+                  {
+                    "kind": "lit",
+                    "value": " "
+                  },
+                  {
+                    "kind": "switch",
+                    "on": {
+                      "kind": "sym",
+                      "var": "$remote_addr",
+                      "reason": "connection-dependent",
+                      "had_vars": true
+                    },
+                    "table": "geo $remote_addr $office",
+                    "cases": [
+                      {
+                        "match": {
+                          "kind": "cidr",
+                          "pattern": "10.0.0.0/8"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "1"
+                        }
+                      },
+                      {
+                        "match": {
+                          "kind": "cidr",
+                          "pattern": "192.168.0.0/16"
+                        },
+                        "value": {
+                          "kind": "lit",
+                          "value": "2"
+                        }
+                      }
+                    ],
+                    "default": {
+                      "kind": "lit",
+                      "value": "0"
+                    },
+                    "src": "nginx.conf:34"
+                  }
+                ],
+                "had_vars": true
+              },
+              "code": 200
+            }
+          }
+        ]
+      }
+    ],
+    "upstreams": [],
+    "tables": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "map",
+        "var": "tenant",
+        "source": "$host",
+        "hostnames": true,
+        "entries": [
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "a.example.com"
+            },
+            "value": "alpha",
+            "src": "nginx.conf:9"
+          },
+          {
+            "match": {
+              "kind": "leading-wildcard",
+              "pattern": "*.b.example"
+            },
+            "value": "beta",
+            "src": "nginx.conf:10"
+          },
+          {
+            "match": {
+              "kind": "trailing-wildcard",
+              "pattern": "www.c.*"
+            },
+            "value": "gamma",
+            "src": "nginx.conf:11"
+          },
+          {
+            "match": {
+              "kind": "regex",
+              "pattern": "^t(?\u003cnum\u003e\\d+)\\."
+            },
+            "value": "tenant$num",
+            "src": "nginx.conf:12"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "public",
+          "src": "nginx.conf:8"
+        }
+      },
+      {
+        "src": "nginx.conf:14",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "map",
+        "var": "pool",
+        "source": "$tenant",
+        "entries": [
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "alpha"
+            },
+            "value": "pool_a",
+            "src": "nginx.conf:16"
+          },
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "beta"
+            },
+            "value": "pool_b",
+            "src": "nginx.conf:17"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "pool_public",
+          "src": "nginx.conf:15"
+        }
+      },
+      {
+        "src": "nginx.conf:19",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "map",
+        "var": "pool_addr",
+        "source": "$pool",
+        "entries": [
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "pool_a"
+            },
+            "value": "10.1.0.2:80",
+            "src": "nginx.conf:21"
+          },
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "pool_b"
+            },
+            "value": "10.1.0.3:80",
+            "src": "nginx.conf:22"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "10.1.0.1:80",
+          "src": "nginx.conf:20"
+        }
+      },
+      {
+        "src": "nginx.conf:25",
+        "origin": "nginx",
+        "status": "static",
+        "kind": "map",
+        "var": "fixed",
+        "source": "alpha",
+        "entries": [
+          {
+            "match": {
+              "kind": "exact",
+              "pattern": "alpha"
+            },
+            "value": "yes",
+            "src": "nginx.conf:27"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "nope",
+          "src": "nginx.conf:26"
+        }
+      },
+      {
+        "src": "nginx.conf:29",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "split_clients",
+        "var": "variant",
+        "source": "${remote_addr}AAA",
+        "entries": [
+          {
+            "match": {
+              "kind": "percent",
+              "pattern": "10%"
+            },
+            "value": "a",
+            "src": "nginx.conf:30"
+          },
+          {
+            "match": {
+              "kind": "percent",
+              "pattern": "20%"
+            },
+            "value": "b",
+            "src": "nginx.conf:31"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "percent",
+            "pattern": "*"
+          },
+          "value": "c",
+          "src": "nginx.conf:32"
+        }
+      },
+      {
+        "src": "nginx.conf:34",
+        "origin": "nginx",
+        "status": "conditional",
+        "kind": "geo",
+        "var": "office",
+        "source": "$remote_addr",
+        "entries": [
+          {
+            "match": {
+              "kind": "cidr",
+              "pattern": "10.0.0.0/8"
+            },
+            "value": "1",
+            "src": "nginx.conf:36"
+          },
+          {
+            "match": {
+              "kind": "cidr",
+              "pattern": "192.168.0.0/16"
+            },
+            "value": "2",
+            "src": "nginx.conf:37"
+          }
+        ],
+        "default": {
+          "match": {
+            "kind": "default",
+            "pattern": ""
+          },
+          "value": "0",
+          "src": "nginx.conf:35"
+        }
+      }
+    ]
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

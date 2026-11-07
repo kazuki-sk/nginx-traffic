@@ -1,0 +1,64 @@
+[Unit]
+Description=Generate nginx configuration sitemap (static analysis, read-only)
+Documentation=file:///usr/local/share/doc/nginx-sitemap/README.md
+# Reads /etc/nginx only; never modifies it and never signals nginx.
+ConditionPathExists=/etc/nginx/nginx.conf
+
+[Service]
+Type=oneshot
+User=nginx-sitemap
+Group=nginx-sitemap
+ExecStart=/usr/local/bin/nginx-sitemap -config /etc/nginx-sitemap/sitemap.conf
+# 0 = success, 1 = partial success (output written, errors listed in it),
+# 2 = fatal. Exit 1 marks the unit "failed" on purpose so it is noticed;
+# uncomment to treat partial success as success instead:
+#SuccessExitStatus=1
+
+# Output: /var/lib/nginx-sitemap, 0755 dir / 0644 files, readable by the
+# nginx worker user ("nginx" in the nginx.org packages).
+StateDirectory=nginx-sitemap
+StateDirectoryMode=0755
+UMask=0022
+
+# ---- Hardening ----
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/nginx-sitemap
+ReadOnlyPaths=/etc/nginx /etc/nginx-sitemap
+# Defence in depth: the tool never opens key material; make sure it cannot.
+# ("-" = ignore if the path does not exist; extend for your key locations.)
+InaccessiblePaths=-/etc/ssl/private -/etc/nginx/tls/private
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+# No network at all (no DNS, no probes). The resolve drop-in relaxes this.
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+# Denied calls fail with EPERM instead of killing the process.
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+RemoveIPC=yes
+
+# ---- Resources ----
+MemoryMax=64M
+CPUQuota=50%
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=60
