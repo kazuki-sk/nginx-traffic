@@ -18,6 +18,17 @@ func TestExitFatalOnMissingMain(t *testing.T) {
 	}
 }
 
+func TestCreatesOutputDir(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "a", "b")
+	fx := filepath.Join(repoRoot(t), "testdata", "fixtures", "upstream", "nginx.conf")
+	if _, err := Run(Options{NginxConf: ptr(fx), OutputDir: ptr(out), Now: fixedNow}); err != nil {
+		t.Fatal(err)
+	}
+	if st, err := os.Stat(filepath.Join(out, "map.json")); err != nil || st.Size() == 0 {
+		t.Fatalf("map.json not written: %v", err)
+	}
+}
+
 func TestWriteAndSkipUnchanged(t *testing.T) {
 	out := t.TempDir()
 	fx := filepath.Join(repoRoot(t), "testdata", "fixtures", "upstream", "nginx.conf")
