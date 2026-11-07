@@ -18,9 +18,11 @@ import (
 
 	"nginx-sitemap/internal/analyze"
 	"nginx-sitemap/internal/atomicfs"
+	"nginx-sitemap/internal/certs"
 	"nginx-sitemap/internal/conf"
 	"nginx-sitemap/internal/emit"
 	"nginx-sitemap/internal/model"
+	"nginx-sitemap/internal/portal"
 	"nginx-sitemap/internal/sitecfg"
 )
 
@@ -116,9 +118,19 @@ func Run(o Options) (*Outcome, error) {
 		return &Outcome{Code: ExitFatal}, err
 	}
 
-	optKey := fmt.Sprintf("su=%v ver=%s maskp=%v maskh=%v maskv=%v show=%v hide=%v stale=%v dot=%v",
-		st.AssumeSuperuser, st.NginxVersion, st.MaskPaths, st.MaskHeaders, st.MaskValues, st.InheritShow, st.InheritHide, st.StaleAfter, st.Dot)
+	// Certificates are read before masking (which rewrites data: arguments)
+	// and are part of the hash, so a renewed certificate regenerates the map.
+	var cr *certs.Result
+	if st.ReadCertificates {
+		cr = certs.Read(res.Main, res.ConfPrefix, nil)
+	}
+
+	optKey := fmt.Sprintf("su=%v ver=%s maskp=%v maskh=%v maskv=%v show=%v hide=%v stale=%v dot=%v certs=%v",
+		st.AssumeSuperuser, st.NginxVersion, st.MaskPaths, st.MaskHeaders, st.MaskValues, st.InheritShow, st.InheritHide, st.StaleAfter, st.Dot, st.ReadCertificates)
 	allFiles := append(append([]conf.File(nil), res.Files...), prefixFiles("sitemap.conf:", sc.Files)...)
+	if cr != nil {
+		allFiles = append(allFiles, cr.Files...)
+	}
 	hash := conf.Hash(allFiles, "tool="+o.ToolVersion, optKey)
 
 	if st.SkipUnchanged && !st.Resolve && st.OutputDir != "" {
@@ -173,6 +185,14 @@ func Run(o Options) (*Outcome, error) {
 	m.Errors = append(m.Errors, sc.Errors...)
 	m.Warnings = append(m.Warnings, sc.Validate(now)...)
 	m.Warnings = append(m.Warnings, applyAnnotations(m, sc.Annotations)...)
+	m.Portal = portal.Build(portal.Input{Analysis: ar, HTTP: m.HTTP, Stream: m.Stream, Certs: cr, ConfPrefix: res.ConfPrefix})
+	for _, s := range m.Portal.Sites {
+		for _, c := range s.Certs {
+			if p, masked := analyze.MaskPath(c.Path, st.MaskPaths); masked {
+				c.Path = p
+			}
+		}
+	}
 
 	if st.Resolve {
 		lookup := o.LookupHost

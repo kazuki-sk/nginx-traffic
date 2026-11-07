@@ -266,6 +266,124 @@
       "reviewed": "2025-01-15"
     }
   ],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:8",
+        "origin": "nginx",
+        "status": "resolved",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "api.example.internal",
+        "url": "http://api.example.internal:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "example.internal",
+        "group_source": "domain",
+        "owner": "team-api",
+        "note": "外部 SaaS からの Webhook を受ける",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.4.0.1:8080/"
+        ],
+        "upstreams": [
+          "app_backend"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:8",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:9",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:10",
+            "text": "    server_name api.example.internal;"
+          },
+          {
+            "src": "nginx.conf:11",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:12",
+            "text": "        proxy_pass http://app_backend;"
+          },
+          {
+            "src": "nginx.conf:13",
+            "text": "        proxy_set_header Authorization ***masked***;"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "        proxy_set_header X-Api-Key ***masked***;"
+          },
+          {
+            "src": "nginx.conf:15",
+            "text": "        proxy_set_header X-Real-IP $remote_addr;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:17",
+            "text": "    location /secure/ {"
+          },
+          {
+            "src": "nginx.conf:18",
+            "text": "        secure_link_md5 ***masked***;"
+          },
+          {
+            "src": "nginx.conf:19",
+            "text": "        set $api_token ***masked***;"
+          },
+          {
+            "src": "nginx.conf:20",
+            "text": "        return 200 $api_token;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "annotations": [
+          {
+            "src": "sitemap.conf:19",
+            "origin": "manual",
+            "status": "declared",
+            "owner": "team-api",
+            "note": "外部 SaaS からの Webhook を受ける"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {
+      "http:app_backend": [
+        {
+          "src": "nginx.conf:5",
+          "text": "upstream app_backend {"
+        },
+        {
+          "src": "nginx.conf:6",
+          "text": "    server 10.4.0.1:8080;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ]
+    }
+  },
   "errors": [],
   "warnings": [
     {

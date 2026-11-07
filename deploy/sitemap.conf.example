@@ -26,6 +26,10 @@ settings {
     #inherited_hide   index;
 
     stale_after       180d;             # warn when an external entry's "reviewed" date is older
+
+    # Read the certificates named by ssl_certificate (never the keys) to show
+    # expiry dates. The nginx-sitemap user needs read access to them.
+    #read_certificates on;
 }
 
 # ---- Things that do not go through this nginx --------------------------
@@ -41,12 +45,16 @@ settings {
 #    owner     infra-mon;
 #    note      "共通基盤（nginx）から独立。nginx 障害時の監視用";
 #    reviewed  2026-11-01;
+#    link      手順書 https://wiki.example.internal/ops/grafana;
 #}
 
 # ---- Notes on nginx-derived elements (never change them) ---------------
 #annotate server api.example.internal {
+#    group  "API";                     # default: grouped by domain (example.internal)
 #    owner  team-api;
 #    note   "外部 SaaS からの Webhook を受ける";
+#    link   管理画面  https://api.example.internal/admin/;
+#    link   Grafana   https://grafana.mon.internal/d/api;
 #}
 #annotate upstream app_backend {
 #    expect 10.0.1.11:8080;     # declared expectation, shown separately from nginx-derived members

@@ -64,6 +64,7 @@ type Map struct {
 	HTTP          *HTTP       `json:"http"`
 	Stream        *Stream     `json:"stream"`
 	External      []External  `json:"external"`
+	Portal        *Portal     `json:"portal"`
 	Errors        []Diag      `json:"errors"`
 	Warnings      []Diag      `json:"warnings"`
 }
@@ -315,6 +316,7 @@ type External struct {
 	Note      string   `json:"note,omitempty"`
 	Reviewed  string   `json:"reviewed,omitempty"`
 	Tags      []string `json:"tags,omitempty"`
+	Links     []Link   `json:"links,omitempty"`
 }
 
 // Annotation is a manual note attached to an nginx-derived element.
@@ -324,4 +326,74 @@ type Annotation struct {
 	Note   string   `json:"note,omitempty"`
 	Tags   []string `json:"tags,omitempty"`
 	Expect []string `json:"expect,omitempty"`
+	Group  string   `json:"group,omitempty"`
+	Links  []Link   `json:"links,omitempty"`
+}
+
+// Link is a named URL written by the user (admin console, dashboard, runbook).
+type Link struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}
+
+// Portal is the site-oriented view used by index.html: one Site per
+// virtual server, grouped, with entry/inner URLs, access summary,
+// certificate expiry and the server's effective configuration text.
+type Portal struct {
+	Sites []*Site `json:"sites"`
+	// HTTPConfig holds http-level directives shown as "inherited" above each
+	// site's configuration (stored once).
+	HTTPConfig []ConfigLine `json:"http_config"`
+	// UpstreamConfig holds the text of each upstream block, keyed by name.
+	UpstreamConfig map[string][]ConfigLine `json:"upstream_config"`
+}
+
+type Site struct {
+	Meta
+	ID          string        `json:"id"`
+	ServerID    string        `json:"server_id"` // http: s<N>, stream: t<N>
+	Proto       string        `json:"proto"`     // http | stream
+	Name        string        `json:"name"`
+	Aliases     []string      `json:"aliases,omitempty"`
+	URL         string        `json:"url,omitempty"` // entry URL; empty for wildcard/regex/default servers
+	Listens     []string      `json:"listens"`
+	Group       string        `json:"group"`
+	GroupSource string        `json:"group_source"` // annotate | domain | default
+	Owner       string        `json:"owner,omitempty"`
+	Note        string        `json:"note,omitempty"`
+	Tags        []string      `json:"tags,omitempty"`
+	Links       []Link        `json:"links,omitempty"`
+	Access      *Access       `json:"access"`
+	InnerURLs   []string      `json:"inner_urls"`
+	Upstreams   []string      `json:"upstreams"`
+	Certs       []*Cert       `json:"certificates,omitempty"`
+	Config      []ConfigLine  `json:"config"`
+	Annotations []*Annotation `json:"annotations,omitempty"`
+}
+
+// Access summarises allow/deny and authentication at server level.
+type Access struct {
+	Summary string    `json:"summary"`
+	Rules   []string  `json:"rules,omitempty"`
+	Auth    []string  `json:"auth,omitempty"`
+	Src     *conf.Src `json:"src,omitempty"`
+}
+
+// Cert is the certificate configured with ssl_certificate. Only the
+// certificate (public) is read, never the key.
+type Cert struct {
+	Path     string    `json:"path"`
+	NotAfter string    `json:"not_after,omitempty"` // RFC 3339
+	Subject  string    `json:"subject,omitempty"`
+	Issuer   string    `json:"issuer,omitempty"`
+	DNSNames []string  `json:"dns_names,omitempty"`
+	Error    string    `json:"error,omitempty"`
+	Src      *conf.Src `json:"src,omitempty"`
+}
+
+// ConfigLine is one line of a reconstructed configuration listing.
+type ConfigLine struct {
+	Src  string `json:"src"`
+	Text string `json:"text"`
+	Kind string `json:"kind,omitempty"` // "" | include | inherited | marker
 }

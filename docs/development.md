@@ -84,6 +84,8 @@ fixture を書くときの注意:
 | `internal/model` | `map.json` の型とスキーマの生成 |
 | `internal/emit` | `map.json`、`index.html`、`map.dot` の出力 |
 | `internal/sitecfg` | `sitemap.conf` の読み込み |
+| `internal/portal` | サイト一覧（画面用のデータ）の組み立て |
+| `internal/certs` | 証明書の読み込み |
 | `internal/atomicfs` | 一時ファイルを使った書き込み |
 | `internal/schemacheck` | テスト用の JSON Schema 検証 |
 

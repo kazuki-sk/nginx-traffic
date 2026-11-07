@@ -406,6 +406,342 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:31",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s6",
+        "server_id": "s6",
+        "proto": "http",
+        "name": ".dot.example",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "dot.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:31",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:32",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:33",
+            "text": "    server_name .dot.example;"
+          },
+          {
+            "src": "nginx.conf:34",
+            "text": "    return 200 dot;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:21",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s4",
+        "server_id": "s4",
+        "proto": "http",
+        "name": "*.api.example.com",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "example.com",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:21",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:22",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "    server_name *.api.example.com;"
+          },
+          {
+            "src": "nginx.conf:24",
+            "text": "    return 200 leading-longer;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:16",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s3",
+        "server_id": "s3",
+        "proto": "http",
+        "name": "*.example.com",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "example.com",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:16",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:17",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:18",
+            "text": "    server_name *.example.com;"
+          },
+          {
+            "src": "nginx.conf:19",
+            "text": "    return 200 leading;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:11",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s2",
+        "server_id": "s2",
+        "proto": "http",
+        "name": "www.example.com",
+        "url": "http://www.example.com:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "example.com",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:11",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:12",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:13",
+            "text": "    server_name www.example.com;"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "    return 200 exact;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:42",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s8",
+        "server_id": "s8",
+        "proto": "http",
+        "name": "www.example.com",
+        "url": "http://www.example.com:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "example.com",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:42",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:43",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:44",
+            "text": "    server_name www.example.com;"
+          },
+          {
+            "src": "nginx.conf:45",
+            "text": "    return 200 dup;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:26",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s5",
+        "server_id": "s5",
+        "proto": "http",
+        "name": "www.example.*",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "www.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:26",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:27",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:28",
+            "text": "    server_name www.example.*;"
+          },
+          {
+            "src": "nginx.conf:29",
+            "text": "    return 200 trailing;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "dynamic",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "~^(?\u003csub\u003e[a-z]+)\\.regex\\.example$",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "（ドメインなし）",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:6",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:7",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:8",
+            "text": "    server_name ~^(?\u003csub\u003e[a-z]+)\\.regex\\.example$;"
+          },
+          {
+            "src": "nginx.conf:9",
+            "text": "    return 200 \"regex1 $sub\";"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:36",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s7",
+        "server_id": "s7",
+        "proto": "http",
+        "name": "~^www\\d+\\.example\\.net$",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "（ドメインなし）",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:36",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:37",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:38",
+            "text": "    server_name ~^www\\d+\\.example\\.net$ \"\";"
+          },
+          {
+            "src": "nginx.conf:39",
+            "text": "    return 200 regex2;"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {}
+  },
   "errors": [],
   "warnings": [
     {

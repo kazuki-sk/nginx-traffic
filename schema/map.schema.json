@@ -1,5 +1,40 @@
 {
   "$defs": {
+    "Access": {
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary"
+      ],
+      "type": "object"
+    },
     "Annotation": {
       "additionalProperties": false,
       "description": "Manual note attached to an nginx-derived element; never changes nginx-derived facts.",
@@ -7,6 +42,15 @@
         "expect": {
           "items": {
             "type": "string"
+          },
+          "type": "array"
+        },
+        "group": {
+          "type": "string"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/Link"
           },
           "type": "array"
         },
@@ -216,6 +260,66 @@
       "required": [
         "match",
         "value"
+      ],
+      "type": "object"
+    },
+    "Cert": {
+      "additionalProperties": false,
+      "properties": {
+        "dns_names": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "error": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "not_after": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "subject": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "type": "object"
+    },
+    "ConfigLine": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "src",
+        "text"
       ],
       "type": "object"
     },
@@ -475,6 +579,12 @@
         },
         "group": {
           "type": "string"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/Link"
+          },
+          "type": "array"
         },
         "listens": {
           "items": {
@@ -817,6 +927,22 @@
         "directive",
         "args",
         "from"
+      ],
+      "type": "object"
+    },
+    "Link": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url"
       ],
       "type": "object"
     },
@@ -1164,6 +1290,16 @@
         "nginx": {
           "$ref": "#/$defs/NginxInfo"
         },
+        "portal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Portal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "schema_version": {
           "type": "string"
         },
@@ -1198,6 +1334,7 @@
         "http",
         "stream",
         "external",
+        "portal",
         "errors",
         "warnings"
       ],
@@ -1379,6 +1516,37 @@
         "main",
         "conf_prefix",
         "assume_superuser"
+      ],
+      "type": "object"
+    },
+    "Portal": {
+      "additionalProperties": false,
+      "properties": {
+        "http_config": {
+          "items": {
+            "$ref": "#/$defs/ConfigLine"
+          },
+          "type": "array"
+        },
+        "sites": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Site"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "upstream_config": {}
+      },
+      "required": [
+        "sites",
+        "http_config",
+        "upstream_config"
       ],
       "type": "object"
     },
@@ -1594,6 +1762,166 @@
       "required": [
         "name",
         "kind"
+      ],
+      "type": "object"
+    },
+    "Site": {
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Access"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "annotations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "certificates": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Cert"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "config": {
+          "items": {
+            "$ref": "#/$defs/ConfigLine"
+          },
+          "type": "array"
+        },
+        "group": {
+          "type": "string"
+        },
+        "group_source": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "inner_urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "$ref": "#/$defs/Link"
+          },
+          "type": "array"
+        },
+        "listens": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "proto": {
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "server_id": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "upstreams": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "id",
+        "server_id",
+        "proto",
+        "name",
+        "listens",
+        "group",
+        "group_source",
+        "access",
+        "inner_urls",
+        "upstreams",
+        "config"
       ],
       "type": "object"
     },

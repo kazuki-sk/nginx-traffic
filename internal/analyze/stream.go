@@ -83,6 +83,7 @@ func (a *analyzer) analyzeStream(st *conf.Node) *model.Stream {
 	for i, n := range st.Find("server") {
 		s := &model.StreamServer{Meta: meta(n.Src), ID: fmt.Sprintf("t%d", i+1), Listens: []string{}}
 		labels[n] = "server:" + s.ID
+		a.nodes.Servers[s.ID] = n
 		lns := n.Find("listen")
 		if len(lns) == 0 {
 			a.errorf("parse-error", n.Src, "no \"listen\" is defined for server")

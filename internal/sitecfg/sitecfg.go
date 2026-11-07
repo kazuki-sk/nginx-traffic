@@ -31,6 +31,9 @@ type Settings struct {
 	InheritHide     []string
 	StaleAfter      time.Duration
 	Dot             bool
+	// ReadCertificates enables reading the files named by ssl_certificate
+	// (certificates only, never keys) to show expiry dates.
+	ReadCertificates bool
 }
 
 func Defaults() Settings {
@@ -135,6 +138,8 @@ func (f *File) settings(b *conf.Node) {
 			s.StaleAfter = d
 		case "dot":
 			s.Dot = onOff(n, f)
+		case "read_certificates":
+			s.ReadCertificates = onOff(n, f)
 		default:
 			f.errorf(n.Src, "unknown setting %q", n.Name)
 		}
@@ -184,6 +189,10 @@ func (f *File) external(b *conf.Node) {
 			e.Note = strings.Join(n.Args, " ")
 		case "tag":
 			e.Tags = append(e.Tags, n.Args...)
+		case "link":
+			if l, ok := f.link(n); ok {
+				e.Links = append(e.Links, l)
+			}
 		case "reviewed":
 			if _, err := time.Parse("2006-01-02", n.Arg(0)); err != nil {
 				f.errorf(n.Src, "reviewed: expected YYYY-MM-DD, got %q", n.Arg(0))
@@ -200,6 +209,20 @@ func (f *File) external(b *conf.Node) {
 		}
 	}
 	f.External = append(f.External, e)
+}
+
+// link parses `link <name> <url>;`.
+func (f *File) link(n *conf.Node) (model.Link, bool) {
+	if len(n.Args) != 2 {
+		f.errorf(n.Src, "usage: link <name> <url>")
+		return model.Link{}, false
+	}
+	u := n.Args[1]
+	if !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://") {
+		f.errorf(n.Src, "link %q: URL must start with http:// or https://", n.Args[0])
+		return model.Link{}, false
+	}
+	return model.Link{Name: n.Args[0], URL: u}, true
 }
 
 var annotateKinds = map[string]bool{"server": true, "upstream": true, "stream_server": true, "stream_upstream": true}
@@ -220,6 +243,12 @@ func (f *File) annotate(b *conf.Node) {
 			a.Tags = append(a.Tags, n.Args...)
 		case "expect":
 			a.Expect = append(a.Expect, n.Args...)
+		case "group":
+			a.Group = strings.Join(n.Args, " ")
+		case "link":
+			if l, ok := f.link(n); ok {
+				a.Links = append(a.Links, l)
+			}
 		default:
 			f.errorf(n.Src, "unknown key %q in annotate", n.Name)
 		}

@@ -997,6 +997,227 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "loc.example",
+        "url": "http://loc.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "loc.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://127.0.0.1:9000/",
+          "http://127.0.0.1:9100/"
+        ],
+        "upstreams": [
+          "app",
+          "127.0.0.1:9100"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:7",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:8",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:9",
+            "text": "    server_name loc.example;"
+          },
+          {
+            "src": "nginx.conf:10",
+            "text": "    root /srv/www;"
+          },
+          {
+            "src": "nginx.conf:11",
+            "text": "    error_page 404 /errors/404.html;"
+          },
+          {
+            "src": "nginx.conf:12",
+            "text": "    error_page 500 502 503 504 @fallback;"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "    location = / {"
+          },
+          {
+            "src": "nginx.conf:15",
+            "text": "        return 200 \"exact root\";"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:17",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:18",
+            "text": "        try_files $uri $uri/ /index.html;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:20",
+            "text": "    location /errors/ {"
+          },
+          {
+            "src": "nginx.conf:21",
+            "text": "        internal;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "    location ^~ /static/ {"
+          },
+          {
+            "src": "nginx.conf:24",
+            "text": "        alias /srv/static/;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:26",
+            "text": "    location ~* \\.(png|jpg)$ {"
+          },
+          {
+            "src": "nginx.conf:27",
+            "text": "        expires 7d;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:29",
+            "text": "    location /api/ {"
+          },
+          {
+            "src": "nginx.conf:30",
+            "text": "        proxy_pass http://app;"
+          },
+          {
+            "src": "nginx.conf:31",
+            "text": "        location ~ ^/api/v[0-9]+/admin {"
+          },
+          {
+            "src": "nginx.conf:32",
+            "text": "            return 403;"
+          },
+          {
+            "src": "",
+            "text": "        }"
+          },
+          {
+            "src": "nginx.conf:34",
+            "text": "        location /api/internal/ {"
+          },
+          {
+            "src": "nginx.conf:35",
+            "text": "            proxy_pass http://127.0.0.1:9100;"
+          },
+          {
+            "src": "",
+            "text": "        }"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:38",
+            "text": "    location ~ ^/old/(.*)$ {"
+          },
+          {
+            "src": "nginx.conf:39",
+            "text": "        rewrite ^/old/(.*)$ /new/$1 last;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:41",
+            "text": "    location /legacy {"
+          },
+          {
+            "src": "nginx.conf:42",
+            "text": "        rewrite ^ /api/v2/legacy last;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:44",
+            "text": "    location /go-home {"
+          },
+          {
+            "src": "nginx.conf:45",
+            "text": "        rewrite ^ https://loc.example/ permanent;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:47",
+            "text": "    location @fallback {"
+          },
+          {
+            "src": "nginx.conf:48",
+            "text": "        proxy_pass http://app;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [],
+    "upstream_config": {
+      "http:app": [
+        {
+          "src": "nginx.conf:6",
+          "text": "upstream app {"
+        },
+        {
+          "src": "nginx.conf:6",
+          "text": "    server 127.0.0.1:9000;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ]
+    }
+  },
   "errors": [],
   "warnings": []
 }

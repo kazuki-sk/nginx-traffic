@@ -85,6 +85,7 @@ settings {
 | `inherited_show` | なし | location ごとに表示する継承ディレクティブを追加 |
 | `inherited_hide` | なし | 上記の表示から除外するディレクティブ |
 | `stale_after` | `180d` | 手動エントリの確認日がこれより古い場合に警告 |
+| `read_certificates` | `off` | `ssl_certificate` の証明書を読み込み、有効期限を表示 |
 
 `assume_superuser` は、listen を指定していない server の待ち受けポートを決めるための設定です。  
 `on` の場合は `*:80`、`off` の場合は `*:8000` とみなします。  
@@ -92,6 +93,9 @@ nginx.org のパッケージは master プロセスを root で起動するた�
 
 `resolve on` を使う場合は、systemd の drop-in も必要です。  
 詳しくは [unit の制限](#unit-の制限) を参照してください。
+
+`read_certificates on` を使う場合は、証明書ファイルの読み取り権限が必要です。  
+詳しくは [読み込むファイル](#読み込むファイル) を参照してください。
 
 全項目を記載したサンプルは `/usr/local/share/doc/nginx-sitemap/sitemap.conf.example` にあります。
 
@@ -112,8 +116,11 @@ external grafana-mon {
 }
 
 annotate server api.example.internal {
+    group  "API";
     owner  team-api;
     note   "外部 SaaS からの Webhook を受ける";
+    link   管理画面  https://api.example.internal/admin/;
+    link   Grafana   https://grafana.mon.internal/d/api;
 }
 
 include /etc/nginx-sitemap/manual.d/*.conf;
@@ -121,15 +128,19 @@ include /etc/nginx-sitemap/manual.d/*.conf;
 
 | ブロック | 指定できる項目 |
 |---|---|
-| `external <名前>` | `group` `endpoint` `listen` `backend` `depends` `owner` `note` `tag` `reviewed` |
-| `annotate server <server_name>` | `owner` `note` `tag` |
+| `external <名前>` | `group` `endpoint` `listen` `backend` `depends` `owner` `note` `tag` `link` `reviewed` |
+| `annotate server <server_name>` | `group` `owner` `note` `tag` `link` |
 | `annotate upstream <名前>` | `owner` `note` `tag` `expect` |
-| `annotate stream_server <名前>` | `owner` `note` `tag` |
+| `annotate stream_server <名前>` | `group` `owner` `note` `tag` `link` |
 | `annotate stream_upstream <名前>` | `owner` `note` `tag` `expect` |
 
 手動で記述した要素には「manual」の印が付きます。  
 `annotate` は注記を追加するだけで、nginx の設定から読み取った内容は変更しません。  
 `expect` は想定するメンバの宣言で、nginx 側のメンバとは区別して表示されます。
+
+`group` はサイト一覧と構成図でのまとまりです。  
+指定しない場合は、ドメインごとにまとめます（`shop.example.co.jp` なら `example.co.jp`）。  
+`link <名前> <URL>` は、管理画面やダッシュボード、手順書などへのリンクです。複数指定できます。
 
 次の場合は警告を出力します。
 
@@ -189,14 +200,20 @@ nginx-sitemap -nginx-conf /etc/nginx/nginx.conf -out /tmp/sitemap
 | `map.json` | 機械処理向けのデータ。スキーマは [schema/map.schema.json](schema/map.schema.json) |
 | `map.dot` | Graphviz 形式のグラフ。`dot -Tsvg map.dot -o map.svg` で画像化できる |
 
-`index.html` では次の情報を確認できます。
+`index.html` には次の画面があります。
 
-- listen ごとの server 一覧と server_name の優先順位
-- location のツリーと各転送先
-- upstream のメンバ
-- map などの分岐表
-- 手動で追加したサービス
-- 解析エラーと警告
+| 画面 | 説明 |
+|---|---|
+| 構成図 | 待ち受け、サイトのグループ、upstream の全体図。サイトを選ぶとパス、upstream、宛先までの経路を表示 |
+| サイト一覧 | サイトをグループごとに一覧表示。外の URL から各サイトを開ける |
+| 台帳 | サイトごとの外の URL、中の URL、証明書の期限、担当、リンク。宛先からの逆引きも可能 |
+| 設定 | サイトに適用される設定を、include を展開して 1 つにまとめて表示 |
+| 解析の詳細 | 解析エラー、警告、読み込んだファイル、map などの分岐表 |
+
+外の URL は利用者がアクセスする URL で、server_name と listen から作成します。  
+中の URL は nginx の転送先です。nginx を経由せずにバックエンドへ直接アクセスする場合に使えます。  
+証明書の残り日数は、ページを開いた時点で計算します。  
+手動で追加したサービスも、サイト一覧、台帳、構成図に表示されます。
 
 各要素には、元になった設定の `ファイル:行` が付きます。  
 変数を含む値は、解決の度合いに応じて次の 4 状態に分類されます。
@@ -238,7 +255,21 @@ dynamic の値には理由が付きます。
 
 ### 読み込むファイル
 
-読み込むのはメイン設定と、`include` されたファイルのみです。秘密鍵、パスワードファイル、htpasswd、証明書は開きません。
+読み込むのはメイン設定と、`include` されたファイルのみです。秘密鍵、パスワードファイル、htpasswd は開きません。
+
+証明書ファイルは、`read_certificates on` の場合に限り読み込みます。  
+証明書と秘密鍵を 1 つのファイルにまとめている場合、そのファイルは読み込みません。
+
+Let's Encrypt の証明書は root 以外から参照できない場所にあります。  
+`read_certificates on` で使う場合は、証明書ファイルとその親ディレクトリに限って ACL で権限を付与してください。
+
+```bash
+setfacl -m u:nginx-sitemap:x /etc/letsencrypt/live /etc/letsencrypt/archive
+setfacl -m u:nginx-sitemap:x /etc/letsencrypt/live/example.com /etc/letsencrypt/archive/example.com
+setfacl -m u:nginx-sitemap:r /etc/letsencrypt/archive/example.com/fullchain*.pem
+```
+
+`privkey*.pem` には権限を付与しないでください。
 
 ### 実行ユーザ
 
@@ -357,6 +388,14 @@ unit では次の制限を設定しています。
 
 - nginx 1.30.0 を前提としています。
 - 1.31.5 で追加された predicate location には対応していません。
+
+### サイトと証明書の情報
+
+- ワイルドカードや正規表現の server_name には、外の URL を作成しません。
+- 中の URL は upstream のメンバから作成します。ネットワークの構成によっては、直接アクセスできない場合があります。
+- グループ分けのドメイン判定は、`co.jp` などの主要な 2 階層ドメインのみに対応しています。それ以外は末尾の 2 ラベルで判定します。
+- 変数を含む `ssl_certificate` や、`data:` 形式で記述された証明書は読み込みません。
+- 証明書と秘密鍵を 1 つのファイルにまとめている場合、有効期限は表示されません。
 
 ### 秘密情報
 

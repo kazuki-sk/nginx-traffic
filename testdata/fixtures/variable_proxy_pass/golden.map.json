@@ -531,6 +531,149 @@
   },
   "stream": null,
   "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:13",
+        "origin": "nginx",
+        "status": "dynamic",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "var.example",
+        "url": "http://var.example:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "var.example",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.2.0.2:80/",
+          "http://10.2.0.1:80/",
+          "http://10.2.0.9:8080/",
+          "https://api.internal.example/"
+        ],
+        "upstreams": [
+          "green",
+          "blue"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:13",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:15",
+            "text": "    server_name var.example;"
+          },
+          {
+            "src": "nginx.conf:16",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:17",
+            "text": "        proxy_pass http://$color;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:19",
+            "text": "    location /host/ {"
+          },
+          {
+            "src": "nginx.conf:20",
+            "text": "        proxy_pass http://$host:8080;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:22",
+            "text": "    location /const/ {"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "        set $target 10.2.0.9:8080;"
+          },
+          {
+            "src": "nginx.conf:24",
+            "text": "        proxy_pass http://$target;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:26",
+            "text": "    location /dns/ {"
+          },
+          {
+            "src": "nginx.conf:27",
+            "text": "        set $svc api.internal.example;"
+          },
+          {
+            "src": "nginx.conf:28",
+            "text": "        proxy_pass https://$svc;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ]
+      }
+    ],
+    "http_config": [
+      {
+        "src": "nginx.conf:6",
+        "text": "resolver 127.0.0.53 valid=30s;",
+        "kind": "inherited"
+      }
+    ],
+    "upstream_config": {
+      "http:blue": [
+        {
+          "src": "nginx.conf:7",
+          "text": "upstream blue {"
+        },
+        {
+          "src": "nginx.conf:7",
+          "text": "    server 10.2.0.1:80;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ],
+      "http:green": [
+        {
+          "src": "nginx.conf:8",
+          "text": "upstream green {"
+        },
+        {
+          "src": "nginx.conf:8",
+          "text": "    server 10.2.0.2:80;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ]
+    }
+  },
   "errors": [],
   "warnings": []
 }
