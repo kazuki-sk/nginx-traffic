@@ -1,407 +1,378 @@
 # nginx-sitemap
 
-nginx の設定ファイルを**静的に解析して**、「どの IP:port / Host で待ち受け、どの location が、どのバックエンドに流れるか」のマップを作るツール。
+nginx の設定ファイルを静的に解析し、リクエストの流れをマップにするツール。
+どの IP:port と Host で待ち受け、どの location がどのバックエンドに流れるかを出力する。
 
-- トラフィックの実測はしない（アクセスログ解析・プローブ・nginx モジュール追加なし）。
-- nginx の設定を一切変更しない。reload / restart もしない。
-- Go 製。CGO なしの単一静的バイナリ。systemd timer から起動され、終了する（常駐しない）。
-- 出力: `map.json`（機械可読。スキーマは [`schema/map.schema.json`](schema/map.schema.json)）、`index.html`（外部リソースなしの単一ファイル）、`map.dot`（Graphviz）。
+トラフィックは計測しない。
+nginx の設定は変更せず、reload もしない。
+systemd timer から定期的に起動し、生成したら終了する。
 
-設計の経緯は [docs/DESIGN.md](docs/DESIGN.md) を参照。
+- 開発者向けの情報: [docs/development.md](docs/development.md)
+- 設計: [docs/DESIGN.md](docs/DESIGN.md)
+- nginx の挙動の根拠: [docs/spec-basis.md](docs/spec-basis.md)
 
----
+## インストール
 
-## 1. ビルド
+### Release から入れる
 
-**配置先のサーバーに Go は要らない。** 成果物は CGO なしの静的リンクバイナリで、Go の実行環境にも libc にも依存しない。Go が必要なのはビルドするマシンだけ。通常は GitHub Release の tar.gz を使えばよく、自分でビルドする必要もない（§3）。
-
-```bash
-make build             # CGO_ENABLED=0 go build -trimpath → bin/nginx-sitemap（静的リンク）
-make test              # go test ./...
-make verify-fixtures   # Docker の nginx:1.30.0 で fixture に nginx -t を流す
-make dist              # 配布用 tar.gz → dist/nginx-sitemap-<version>-linux-<arch>.tar.gz（+ .sha256）
-make dist GOARCH=arm64 # 別アーキテクチャ向け（クロスビルド）
-```
-
-- **ビルドに使う Go:** サポート中の最新パッチ版を推奨する（Release の CI は 1.27 系の最新パッチを使う）。
-  - 標準ライブラリ（`regexp`、`html/template`、`encoding/json` など）はバイナリに埋め込まれるので、Go のセキュリティ修正を取り込むには**再ビルドが必要**。Go のパッチリリースが出たら作り直す。
-  - 動作確認は Go 1.27 系で行っている。下限の目安は 1.22（nginx の正規表現でよく使う `(?<name>…)` 記法を Go の `regexp` が受け付けるようになった版）。`go.mod` には `go 1.23` と書いてある。
-- **実行時の依存:** 標準ライブラリと [nginx-go-crossplane](https://github.com/nginxinc/nginx-go-crossplane)（Apache-2.0、v0.4.89）だけ。
-
-## 2. 使い方
+GitHub Release の tar.gz を使う。
+配置先のサーバーに Go や make は要らない。
 
 ```bash
-nginx-sitemap [-config /etc/nginx-sitemap/sitemap.conf] [-nginx-conf /etc/nginx/nginx.conf]
-              [-out /var/lib/nginx-sitemap] [-resolve] [-skip-unchanged] [-nginx-version 1.30.0]
+VER=v0.1.0
+ARCH=amd64    # または arm64
+gh release download "$VER" --repo kazuki-sk/nginx-traffic -p "nginx-sitemap-$VER-linux-$ARCH.tar.gz*"
+sha256sum -c "nginx-sitemap-$VER-linux-$ARCH.tar.gz.sha256"
+tar xzf "nginx-sitemap-$VER-linux-$ARCH.tar.gz"
+cd "nginx-sitemap-$VER-linux-$ARCH"
+sudo ./install.sh
 ```
 
-- コマンドラインのフラグは、設定ファイル（`sitemap.conf`）の値より優先される。
-- `-config` を省略した場合、既定のパスにファイルが無ければ既定値で動く。`-config` を明示した場合、ファイルが無いと致命的エラーになる。
+リポジトリは private なので、`curl` では取得できない。
+サーバーから GitHub に出られない場合は、手元で取得した tar.gz を持ち込む。
 
-| 終了コード | 意味 |
+### ソースから入れる
+
+```bash
+make build
+sudo make install
+```
+
+`make build` には Go が必要。
+`make install` はビルドしない。ビルド済みのバイナリを配置するだけ。
+詳しくは [docs/development.md](docs/development.md) を参照。
+
+### install.sh がすること
+
+- バイナリを `/usr/local/bin/nginx-sitemap` に置く。
+- unit と timer を `/etc/systemd/system/` に置く。
+- ユーザ `nginx-sitemap` を作る。
+- `/etc/nginx-sitemap/sitemap.conf` が無ければ、サンプルから作る。
+- README とサンプル類を `/usr/local/share/doc/nginx-sitemap/` に置く。
+
+既にある `sitemap.conf` は上書きしない。
+サービスの起動と有効化はしない。
+
+| オプション | 内容 |
 |---|---|
-| 0 | 成功（ハッシュが同じで再生成をスキップした場合も含む） |
-| 1 | 部分成功。出力は書かれ、エラーの一覧が `map.json` / `index.html` に含まれる |
-| 2 | 致命的失敗（メイン設定が読めない、出力先に書けない、など） |
+| `DESTDIR=<dir>` | 指定したディレクトリの下に配置する。systemd は操作しない |
+| `PREFIX=<dir>` | バイナリの置き場所を変える。unit の `ExecStart` も合わせて書き換える |
+| `--no-systemd` | ユーザ作成と `daemon-reload` をしない |
 
-書き込みは「同じディレクトリに一時ファイル → fsync → chmod 0644 → rename → ディレクトリを fsync」の順で行う。`map.json` は最後に置き換えるので、途中で落ちても「完成済み」を示すハッシュが部分的な出力の横に残ることはない。
+## 設定
 
-## 3. 配置
+設定ファイルは `/etc/nginx-sitemap/sitemap.conf`。
+書き方は nginx の設定と同じ。
+nginx が読み込まないように、`/etc/nginx` の外に置く。
 
-### 3.0 インストール
-
-**A. Release の tar.gz から入れる（推奨。サーバーに Go も make も要らない）**
-
-```bash
-VER=v0.1.0; ARCH=amd64        # arm64 も用意している
-curl -LO https://github.com/kazuki-sk/nginx-traffic/releases/download/$VER/nginx-sitemap-$VER-linux-$ARCH.tar.gz
-curl -LO https://github.com/kazuki-sk/nginx-traffic/releases/download/$VER/nginx-sitemap-$VER-linux-$ARCH.tar.gz.sha256
-sha256sum -c nginx-sitemap-$VER-linux-$ARCH.tar.gz.sha256
-tar xzf nginx-sitemap-$VER-linux-$ARCH.tar.gz
-cd nginx-sitemap-$VER-linux-$ARCH && sudo ./install.sh
+```nginx
+settings {
+    nginx_conf        /etc/nginx/nginx.conf;
+    nginx_version     1.30.0;
+    assume_superuser  on;
+    output_dir        /var/lib/nginx-sitemap;
+    skip_unchanged    on;
+}
 ```
 
-- リポジトリは private なので、`curl` では取得できない。`gh release download $VER --repo kazuki-sk/nginx-traffic` を使うか、ブラウザで取得する。
-- サーバーがインターネットに出られない場合は、手元で取得した tar.gz を `scp` で持ち込めばよい。
-
-**B. ソースから入れる**
-
-```bash
-make build            # Go のあるマシンで
-sudo make install     # bin/nginx-sitemap を配置するだけ。ビルドはしない（bin が無ければエラー）
-```
-
-- 別のマシンでビルドする場合は `make dist` で tar.gz を作り、A と同じ手順で入れる。
-
-`install.sh`（`make install` も中身はこれ）がすること:
-- 次のファイルを配置する:
-  - バイナリ（`/usr/local/bin`）
-  - unit と timer（`/etc/systemd/system`）
-  - sysusers の定義（`/usr/lib/sysusers.d`）
-  - README・各種サンプル・ライセンス（`/usr/local/share/doc/nginx-sitemap`）
-- `/etc/nginx-sitemap/sitemap.conf` が無ければサンプルから作る。**既にあれば上書きしない。**
-- `systemd-sysusers` でユーザ `nginx-sitemap` を作り、`systemctl daemon-reload` を実行する。
-- しないこと: **サービスの起動・有効化、nginx の設定変更、nginx の reload は一切しない。**
-- オプション:
-  - `DESTDIR=<dir>`: 別ディレクトリへのステージング。systemd の操作はしない。
-  - `PREFIX=/opt/...`: バイナリの置き場所を変える。unit の `ExecStart` も追従する。
-  - `--no-systemd`: systemd の操作を省く。
-
-### 3.1 起動
-
-```bash
-sudoedit /etc/nginx-sitemap/sitemap.conf
-sudo systemctl start nginx-sitemap.service   # 1 回だけ試す
-journalctl -u nginx-sitemap.service -n 20
-sudo systemctl enable --now nginx-sitemap.timer
-```
-
-### 3.2 リリースの作り方（メンテナ向け）
-
-```bash
-git tag v0.1.0 && git push origin v0.1.0
-```
-
-- タグを push すると GitHub Actions（[`.github/workflows/release.yml`](.github/workflows/release.yml)）が次を順に実行する:
-  1. gofmt / vet / `go test`
-  2. Docker の nginx:1.30.0 による fixture の `nginx -t` 検証
-  3. amd64 / arm64 の tar.gz と sha256 の作成
-  4. tar.gz から一時ディレクトリへのインストールと、実際の生成テスト
-  5. GitHub Release の作成
-- タグに `-` を含む版（`v0.1.0-rc1`、`v1.2.0-beta.1` など）は **pre-release** として公開し、Latest にはしない。`v0.1.0` のような正式版だけが Latest になる。
-- 使う Go は 1.27 系の最新パッチ。Actions はコミット SHA で固定している。
-- 所要時間は 1 回あたり数分で、private リポジトリの無料枠（Free プランで 2,000 分/月）に十分収まる。
-
-### 3.3 配置されるファイル
-
-| ファイル | 置き場所 |
-|---|---|
-| `deploy/systemd/nginx-sitemap.service` | `/etc/systemd/system/`（Type=oneshot） |
-| `deploy/systemd/nginx-sitemap.timer` | `/etc/systemd/system/`（`OnCalendar=*:0/15`、`Persistent=true`、`RandomizedDelaySec=60`） |
-| `deploy/systemd/nginx-sitemap.sysusers.conf` | `/usr/lib/sysusers.d/nginx-sitemap.conf` |
-| `deploy/systemd/nginx-sitemap.service.d/resolve.conf.example` | `/usr/local/share/doc/nginx-sitemap/resolve.conf.example`。`resolve on` のときだけ手動で `/etc/systemd/system/nginx-sitemap.service.d/resolve.conf` にコピーする |
-| `deploy/sitemap.conf.example` | `/etc/nginx-sitemap/sitemap.conf` |
-| `deploy/nginx/nginx-sitemap.conf` | `/usr/local/share/doc/nginx-sitemap/nginx-sitemap.nginx.conf.sample`。公開用 server ブロックのサンプル（**自動適用しない**。§6） |
-
-### 3.4 実行ユーザと最小権限
-
-- **専用の固定ユーザ `nginx-sitemap` を使う（root は使わない）。**
-  - DynamicUser を使わないのは、`StateDirectory=` と組み合わせると実体が `/var/lib/private/`（root のみ 0700）の下に置かれ、nginx ワーカーが出力を読めなくなるため。
-- **読み取りに必要な権限:** メイン設定と、`include` で読まれる全ファイルの r、それらを含むディレクトリの x。
-  - nginx.org のパッケージ既定（`/etc/nginx` 配下は root:root の 0644 / 0755）なら追加設定は要らない。
-  - 一部の設定ファイルが 0640 などの場合は、そのファイルにだけ ACL を付ける（例 `setfacl -m u:nginx-sitemap:r /etc/nginx/conf.d/x.conf`）。nginx グループへの追加より範囲を絞れる。
-- **鍵やパスワードのファイルには権限を与えない。** ツールは `include` 対象以外のファイルを一切開かない。開かないファイルの例: `ssl_certificate_key`、`ssl_password_file`、`auth_basic_user_file`、証明書。unit 側でも `InaccessiblePaths=-/etc/ssl/private -/etc/nginx/tls/private` で読めなくしている（鍵の置き場所に合わせて追加する）。
-- **出力先:** `StateDirectory=nginx-sitemap` で `/var/lib/nginx-sitemap` を作る（所有者 nginx-sitemap、0755）。`UMask=0022` でファイルは 0644 になり、nginx ワーカー（nginx.org パッケージでは `nginx`）から読める。
-
-### 3.5 ハードニング（unit に設定済み）
-
-- **ファイルシステム:** `ProtectSystem=strict` と `ReadWritePaths=/var/lib/nginx-sitemap` で、書き込めるのは出力先だけ。ほかに `ReadOnlyPaths=/etc/nginx /etc/nginx-sitemap`、`ProtectHome`、`PrivateTmp`、`PrivateDevices`。
-- **ネットワーク:** `PrivateNetwork=yes` と `RestrictAddressFamilies=AF_UNIX`。`resolve on` のときだけ drop-in で解除する。
-- **権限と syscall:**
-  - `NoNewPrivileges`、`CapabilityBoundingSet=`（空）、`MemoryDenyWriteExecute`
-  - `SystemCallFilter=@system-service ~@privileged`（拒否した呼び出しは `SystemCallErrorNumber=EPERM` で失敗させる）
-  - `ProtectKernel*`、`ProtectProc=invisible` など
-- **リソース:** `MemoryMax=64M`、`CPUQuota=50%`、`Nice=10`、`IOSchedulingClass=idle`、`TimeoutStartSec=60`
-- **部分成功の扱い:** 部分成功（exit 1）では unit が failed になる。意図的にそうしていて、エラーに気づけるようにするため。不要なら `SuccessExitStatus=1` のコメントを外す。
-
-> 確認できた範囲: このリポジトリでは `systemd-analyze verify` を通し、`systemd-run --user` で次のオプションを付けた実行を確認した。
-> - syscall フィルタ、`MemoryDenyWriteExecute`、`PrivateNetwork`、`MemoryMax=64M`、`RestrictNamespaces`
->
-> 次の項目は root が必要なため実機では未検証:
-> - `User=`、`StateDirectory=`、`ProtectSystem=strict`、`InaccessiblePaths=`
->
-> 初回は `systemctl start` で手動実行し、journal を確認すること。
-
-## 4. 設定ファイル（sitemap.conf）
-
-nginx と同じ構文で書き、同じパーサで読む。そのため手動エントリにも `file:line` の出典が付く。nginx が誤って include しないよう、**`/etc/nginx` の外**に置く。全項目は [`deploy/sitemap.conf.example`](deploy/sitemap.conf.example) を参照。
-
-| 設定 | 既定 | 説明 |
+| 項目 | 既定値 | 内容 |
 |---|---|---|
-| `nginx_conf` | `/etc/nginx/nginx.conf` | メイン設定 |
-| `nginx_version` | なし | `$nginx_version` の値と、バージョン依存の判定に使う（例: stream の server_name は 1.25.5 以上） |
-| `assume_superuser` | `on` | listen 省略時の補完値。`on` なら `*:80`、`off` なら `*:8000` |
+| `nginx_conf` | `/etc/nginx/nginx.conf` | 解析するメイン設定 |
+| `nginx_version` | なし | 対象の nginx のバージョン。バージョンで変わる挙動の判定に使う |
+| `assume_superuser` | `on` | nginx が root で動いているか。listen を省略した server のポートが決まる |
 | `output_dir` | `/var/lib/nginx-sitemap` | 出力先 |
-| `skip_unchanged` | `off` | 設定ハッシュが前回の `map.json` と同じなら何もしない（`resolve on` の実行はスキップしない） |
-| `resolve` | `off` | 生成時点の DNS スナップショットを併記する |
+| `skip_unchanged` | `off` | 設定が前回と同じなら生成しない |
+| `resolve` | `off` | 生成時点の DNS の解決結果を併記する |
 | `dot` | `on` | `map.dot` も出力する |
-| `mask_header` / `mask_paths` / `mask_values` | — | マスクの追加と無効化（§7.3） |
-| `inherited_show` / `inherited_hide` | — | location ごとに表示する継承ディレクティブの追加と除外 |
-| `stale_after` | `180d` | `external` の `reviewed` がこれより古ければ警告する |
+| `mask_header` | なし | 値を伏せるヘッダを追加する |
+| `mask_paths` | なし | 伏せるファイルパスを glob で指定する |
+| `mask_values` | `on` | `off` にすると秘密情報を伏せなくなる |
+| `inherited_show` | なし | location ごとに表示する継承ディレクティブを追加する |
+| `inherited_hide` | なし | 上の表示から外すディレクティブ |
+| `stale_after` | `180d` | 手動エントリの確認日がこれより古いと警告する |
 
-### 4.1 nginx 設定に無いもの（手動エントリ）
+`assume_superuser` は、listen を書いていない server の待ち受けポートを決める。
+`on` なら `*:80`、`off` なら `*:8000` とみなす。
+nginx.org のパッケージは master プロセスを root で起動するので、通常は `on` でよい。
 
-共通基盤から独立させている監視系など、この nginx を経由しないものを、ユーザが自分で書く。
+`resolve on` を使う場合は、systemd の drop-in も必要になる。
+詳しくは [unit の制限](#unit-の制限) を参照。
+
+全項目のサンプルは `/usr/local/share/doc/nginx-sitemap/sitemap.conf.example` にある。
+
+### nginx を通らないものを書き足す
+
+nginx を経由しないサービスも、手で書けばマップに載る。
+共通基盤から独立させた監視系などに使う。
 
 ```nginx
 external grafana-mon {
     group     monitoring;
     endpoint  https://grafana.mon.internal:3000;
-    listen    10.0.5.10:3000 ssl;
     backend   10.0.5.10:3000;
-    depends   prometheus-mon;        # 手動エントリ同士の依存
+    depends   prometheus-mon;
     owner     infra-mon;
-    note      "共通基盤から独立。nginx 障害時の監視用";
+    note      "nginx 障害時も使えるよう独立させている";
     reviewed  2026-11-01;
 }
-annotate server api.example.internal { owner team-api; note "Webhook 受け"; }
-annotate upstream app_backend { expect 10.0.1.11:8080; }
+
+annotate server api.example.internal {
+    owner  team-api;
+    note   "外部 SaaS からの Webhook を受ける";
+}
+
 include /etc/nginx-sitemap/manual.d/*.conf;
 ```
 
-- **出自を区別する:** 手動の要素はすべて `origin: "manual"`、`status: "declared"` になり、出典は sitemap.conf の行を指す。HTML では紫のバッジで区別する。
-- **nginx 由来の内容は変えない:** `annotate` は注記を足すだけ。`expect` も「宣言された想定値」として別枠に表示する。
-- **古くなった記述を検出する:**
-  - 注記の対象が nginx 設定に無い → `stale-annotation`
-  - `reviewed` が `stale_after` より古い → `stale-manual-entry`
-  - `depends` 先が未定義 → `manual-unknown-depends`
-  - いずれも警告として出力する。
-- **ハッシュに含める:** 手動ファイルも設定ハッシュに含めるので、追記すれば再生成される。
-- **nginx 障害時の閲覧:** マップは同じ nginx で配信するので、その nginx が落ちると Web からは見られない。`index.html` は 1 ファイルで完結しており、`file://` でも開ける。障害時に備えて手元へコピーしておける。
+| ブロック | 書ける項目 |
+|---|---|
+| `external <名前>` | `group` `endpoint` `listen` `backend` `depends` `owner` `note` `tag` `reviewed` |
+| `annotate server <server_name>` | `owner` `note` `tag` |
+| `annotate upstream <名前>` | `owner` `note` `tag` `expect` |
+| `annotate stream_server <名前>` | `owner` `note` `tag` |
+| `annotate stream_upstream <名前>` | `owner` `note` `tag` `expect` |
+
+手で書いた要素には「manual」の印が付く。
+`annotate` は注記を足すだけで、nginx から読み取った内容は変えない。
+`expect` は想定するメンバの宣言で、nginx 側のメンバとは別に表示する。
+
+次の場合は警告を出す。
+
+- `annotate` の対象が nginx の設定に無い
+- `reviewed` の日付が `stale_after` より古い
+- `depends` の相手が定義されていない
+
+## 動かす
 
 ```bash
-scp host:/var/lib/nginx-sitemap/index.html ./
+sudo systemctl start nginx-sitemap.service
+journalctl -u nginx-sitemap.service -n 20
+sudo systemctl enable --now nginx-sitemap.timer
 ```
 
-## 5. 出力
+timer は 15 分ごとに起動する。
+起動時刻は最大 60 秒ずれる。
+止まっていた間の分は、次の起動時に 1 回だけ実行する。
 
-### 5.1 map.json
-
-- 構造は listen → server → location → handler → backend / upstream の順にたどれる。重複を避けるため、listen は server を **id で参照**し、handler は upstream を**名前で参照**する。
-- すべての要素が次の 3 つを持つ:
-  - `src`（`"file:line"`）
-  - `origin`（`nginx` | `manual`）
-  - `status`。値は次のいずれか:
-    - `static`: 変数を含まない
-    - `resolved`: 変数を含むが、すべて定数に畳み込めた
-    - `conditional`: 有限の分岐表になり、葉はすべて定数
-    - `dynamic`: 生成時点では決まらない
-    - `declared`: 手動で書いた値
-- `static` 以外には `reasons[]`（理由コード）が付く。理由コードの一覧:
-  - `request-dependent` `connection-dependent` `filesystem-dependent` `host-dependent`
-  - `runtime-dns` `unsupported-directive` `unsupported-regex` `unsupported-module`
-  - `cycle` `branch-limit` `unknown-variable` `condition-dependent` `version-dependent`
-  - `parse-error` `masked` `implicit-default`
-- include の経路は `files[].included_from` にファイル単位で一度だけ記録する。
-- 変数を含む値は `Expr` で表す: `lit` / `sym` / `concat` / `switch`（分岐表。map の連鎖は元の条件、例えば `$host` まで展開する）。
-- スキーマ（JSON Schema draft 2020-12）は Go の型から生成している。`go test ./internal/model` で常に同期していることを検証し、全ゴールデンをこのスキーマで検証している。
-
-### 5.2 index.html
-
-- **一覧と検索:** listen 単位の一覧（default_server と server_name の選択順位表を含む）、server 一覧、upstream、map / geo / split_clients、手動エントリ、エラーと読み込んだファイルの一覧。server_name・location・宛先での検索と「dynamic / conditional のみ」の絞り込みができ、該当箇所はハイライトされる。
-- **表示内容:** すべての要素の出典（include 経路はツールチップで表示）、生成時刻、設定ハッシュ。
-- **外部リソース:** 一切読み込まない。CSP は `default-src 'none'` とインライン script / style のハッシュだけ。JS が無効な環境では `map.json` を見るよう案内する。
-
-### 5.3 map.dot
-
-Mermaid ではなく **Graphviz（DOT）** を採用した。Mermaid は既定で辺が 500 本まで、テキストが 50k 文字までという制限があり、server が数百ある規模では描画できないため。
+手動でも実行できる。
 
 ```bash
-dot -Tsvg map.dot -o map.svg
+nginx-sitemap -nginx-conf /etc/nginx/nginx.conf -out /tmp/sitemap
 ```
 
-## 6. 公開用 nginx 設定（サンプル）
+| フラグ | 内容 |
+|---|---|
+| `-config <file>` | 設定ファイル。既定は `/etc/nginx-sitemap/sitemap.conf` |
+| `-nginx-conf <file>` | 解析するメイン設定 |
+| `-out <dir>` | 出力先。無ければ作る |
+| `-nginx-version <ver>` | 対象の nginx のバージョン |
+| `-skip-unchanged` | 設定が前回と同じなら生成しない |
+| `-resolve` | 生成時点の DNS の解決結果を併記する |
+| `-version` | バージョンを表示する |
 
-[`deploy/nginx/nginx-sitemap.conf`](deploy/nginx/nginx-sitemap.conf) は**サンプルとして提供するだけ**で、ツールは適用しない。
+フラグは設定ファイルより優先する。
+`-config` を省略し、既定の場所にファイルが無い場合は、既定値で動く。
+`-config` で指定したファイルが無い場合はエラーになる。
 
-- **内容:** 内部 IP だけで listen し、`allow` / `deny` で公開範囲を絞る。キャッシュを無効にするヘッダ（`Cache-Control: no-store`、`etag off`）を付け、`index.html` / `map.json` / `map.dot` だけを配信してそれ以外は 404 にする。
-- **適用手順:** 次のプレースホルダを置き換えてから `nginx -t` → reload する（reload は運用者が行う）。
-  - IP（10.0.0.10）
-  - ホスト名（nginx-map.lab.internal）
-  - CIDR
-  - 証明書のパス
-- **マップへの反映:** この server ブロックは nginx 設定の一部なので、マップにも普通の server として現れる。fixture `publish_sample` で確認済み。
+| 終了コード | 意味 |
+|---|---|
+| 0 | 成功。設定が同じで生成を省いた場合も含む |
+| 1 | 出力はしたが、解析エラーがある |
+| 2 | 出力できなかった |
 
-## 7. 仕様の根拠
+終了コード 1 では unit が failed になる。
+エラーに気づけるように、あえてそうしている。
 
-nginx の挙動に関する判断は、**公式ドキュメント（doc）を第一の根拠とし、ドキュメントに記載がない点は nginx 1.30.0 のソース（src）を根拠にした**。この方針は合意済み。ソースは https://nginx.org/download/nginx-1.30.0.tar.gz から取得した。コード中の該当箇所にもコメントで同じ根拠を書いている。
+## 出力
 
-### 7.1 主な判断
+出力先には 3 つのファイルができる。
 
-| 項目 | 判断 | 根拠 |
-|---|---|---|
-| include の相対パス | conf prefix（`-c` で渡したファイルのディレクトリ）を基準にする。include した側のファイルの場所ではない | src `core/ngx_conf_file.c` ngx_conf_include → `ngx_conf_full_name(cycle, &file, 1)` |
-| include の glob | glob(3) を flags=0 で呼ぶ: バイト順にソートし、先頭の `.` にはマッチしない。0 件は許す。glob でない場合は読めないとエラー | src `os/unix/ngx_files.c` ngx_open_glob、`ngx_conf_include` |
-| include の循環 | nginx には循環の検出がない（1.30.0 の `nginx -t` は SIGSEGV で落ちることを Docker で確認した）。ツールは `cycle` エラーとして記録し、残りを解析する | 実機の挙動 + src ngx_conf_include |
-| listen を省略した場合 | superuser なら `*:80`、そうでなければ `*:8000`。`assume_superuser` で指定し、補完値として印を付ける | doc ngx_http_core_module#listen、src `ngx_http_core_server`（`getuid() == 0 ? 80 : 8000`） |
-| アドレスだけの listen | ポート 80 | doc #listen |
-| default_server | 明示が優先。無ければその address:port で最初の server。明示が 2 つあればエラー | doc #listen、src `ngx_http_add_addresses` / `ngx_http_add_address` |
-| `*:80` と `10.0.0.1:80` の共存 | address:port ごとに server 一覧と default を別々に持つ。10.0.0.1:80 宛ての接続では、10.0.0.1:80 の server だけが候補になる。`bind` が無ければ、ソケットは `*:80` で受けて getsockname() で振り分ける | src `ngx_http_init_listening` / `ngx_http_add_addrs` |
-| listen のフラグ | ssl / http2 / quic / proxy_protocol は同じ address:port の server 間で OR される。ソケットオプションは 1 回しか書けない | src `ngx_http_add_addresses` |
-| listen のパラメータ | 1.30.0 で受け付けるもの以外はエラー | src `ngx_http_core_listen` / `ngx_stream_core_listen` |
-| server_name の優先順位 | 完全一致 → 最長の前方ワイルドカード → 最長の後方ワイルドカード → 正規表現（出現順）。`.example.com` は example.com と `*.example.com` の両方にマッチする。名前は小文字化する | doc http/server_names.html、src `ngx_http_core_server_name`（ngx_strlow） |
-| server_name の重複 | 同じ address:port 上の 2 つ目以降は無視（警告） | src `ngx_http_server_names`（"conflicting server name"） |
-| server_name の既定 | `""` | doc #server_name |
-| location の探索 | `=` → 最長の prefix（ネストした location を再帰的に探索）→ その prefix が `^~` でなければ同じ階層の regex を出現順に → 何もマッチしなければ記憶した prefix。末尾 `/` の prefix で `*_pass` を使う location は、URI+`/` に 301 を返す | doc #location、src `ngx_http_core_find_location` / `ngx_http_core_find_static_location`（auto_redirect） |
-| predicate location（`location $var`） | 1.31.5 で追加された機能。1.30.0 では普通の prefix 文字列として扱う | doc #location（"(1.31.5)"） |
-| rewrite 系ディレクティブの実行モデル | server レベルは location 探索の前、location レベルは location の rewrite フェーズで、書いた順に実行する | doc ngx_http_rewrite_module |
-| rewrite 系のネスト継承 | ネストした location には**継承しない** | src `ngx_http_rewrite_merge_loc_conf`（子の codes が NULL のままなら handler は何もしない） |
-| `if` の本体 | 外側と同じコード列の中で実行される。条件が真なら if 内の location 設定（proxy_pass など）が使われる | src `ngx_http_rewrite_if`（`nlcf->codes = lcf->codes`）、`ngx_http_script_if_code` |
-| 変数の寿命 | 内部リダイレクトを越えて値が残る。そのため別の経路で set された値は `condition-dependent` にする | src `ngx_http_internal_redirect`（r->variables をクリアしない） |
-| map の照合 | 小文字化した値で 完全一致 → (hostnames のとき) 前方ワイルドカード → 後方ワイルドカード → 正規表現（値が空でないとき、出現順）→ default | doc ngx_http_map_module、src `ngx_http_map_find` |
-| geo | 最長の CIDR を優先する | src radix tree（ngx_http_geo） |
-| map / 変数の循環 | nginx は実行時に "cycle while evaluating variable" を出す。ツールは `cycle` と記録する | src `ngx_http_get_indexed_variable` |
-| upstream 名の解決（静的） | 同名の upstream（大小文字を区別しない、定義順は問わない）を使う。ポートを付けるとエラー。該当が無ければ host:port の暗黙 upstream になり、名前は起動時に一度だけ解決される | src `ngx_http_upstream_add` |
-| upstream 名の解決（変数） | 実行時に upstream 群を探す（ポートも一致が必要）→ 無ければ resolver。resolver が無ければ警告する | doc #proxy_pass（"searched among the described server groups, and, if not found, is determined using a resolver"）、src `ngx_http_upstream_init_request` |
-| upstream のメンバの既定値 | weight=1、max_fails=1、fail_timeout=10s、max_conns=0。`resolve` は実行時に再解決される（OSS では 1.27.3 以上） | doc ngx_http_upstream_module#server |
-| 継承（配列型） | proxy_set_header / add_header / error_page / allow・deny は「現在のレベルに 1 つも無いときだけ」継承する。proxy_set_header の既定値は `Host $proxy_host` と `Connection close` | doc #proxy_set_header、#add_header、src `ngx_http_core_merge_loc_conf`（error_pages） |
-| 継承しないもの | `*_pass`（その location のハンドラ）、alias、try_files | src: try_files モジュールは merge_loc_conf を持たない。`*_pass` は clcf->handler を設定する |
-| `$server_name` | 明示された server_name がちょうど 1 つのときだけ確定させる（保守的な扱い。合意済み） | doc（"name of the server which accepted a request"） |
-| `$server_port` / `$server_addr` / `$scheme` / `$https` | server の listen から確定させる。複数あれば listen ごとの分岐、ワイルドカードの `$server_addr` は不明 | doc Embedded Variables |
-| stream | listen は必須。server_name は 1.25.5 以上（ssl_preread または SSL のフェーズで選択される） | doc ngx_stream_core_module、src `ngx_stream_core_server` |
+| ファイル | 内容 |
+|---|---|
+| `index.html` | ブラウザで見る一覧。外部のファイルを読み込まない |
+| `map.json` | 機械向けのデータ。スキーマは [schema/map.schema.json](schema/map.schema.json) |
+| `map.dot` | Graphviz のグラフ。`dot -Tsvg map.dot -o map.svg` で画像になる |
 
-### 7.2 変数の評価（実測なしの部分評価）
+`index.html` では次のものを見られる。
 
-- **set:** server → location の順に、書いた順の命令列として抽象実行する。値が確定しない `if` は、合流点で `if` 条件の分岐表にする。`return` / `rewrite … last|break|redirect` で実行を止める。条件が静的に決まる `if`（`$a = "prod"` など）は評価する。
-- **map / geo / split_clients:**
-  - 入力が定数なら値を 1 つに決める。
-  - 入力が未知なら分岐表に展開する。入力が別の map の結果（連鎖）なら、分岐ごとに次の map を適用し、元の条件のまま表現する。
-  - split_clients は割合の表のまま出す（MurmurHash の評価はしない）。
-- **組み込み変数:** §7.1 の表のとおり。それ以外は、リクエスト依存・接続依存・ホスト依存・未知の変数に分類して、シンボルとして残す。
-- **正規表現:** Go の RE2 でコンパイルできる式だけを評価する。PCRE 固有の構文（先読み、後方参照など）は `unsupported-regex` にする。
-- **爆発の防止:** 式のノード数が 256 を超えたら `branch-limit`（dynamic）にする。`*_pass` の宛先の列挙は 64 件まで。
-- **DNS:** 既定では名前のまま出す。`resolve on` のときだけ、生成時点の解決結果を「スナップショット」として併記する（nginx 自身の解決結果ではない）。純 Go のリゾルバなので、使うのは `/etc/hosts` と `/etc/resolv.conf` だけで、nsswitch（LDAP / mDNS など）は使わない。
+- listen ごとの server の一覧と、server_name の優先順位
+- location の木と、それぞれの転送先
+- upstream のメンバ
+- map などの分岐表
+- 手動で書き足したサービス
+- 解析エラーと警告
 
-### 7.3 秘密情報
+各要素には、元になった設定の `ファイル:行` が付く。
+変数を含む値は、どこまで決まったかで次の 4 つに分かれる。
 
-- **開かないファイル:** `include` の対象以外は一切開かない。鍵、パスワードファイル、htpasswd、証明書の中身は読まない。
-- **既定でマスクする値:**
-  - Authorization / Proxy-Authorization / Cookie / X-Api-Key / X-Auth-Token ヘッダの値（`*_set_header`、`add_header`）
-  - `secure_link_secret` / `secure_link_md5` の引数
-  - 名前が secret / token / password / api_key / private_key / credential に該当する `set` 変数の値
-  - `*_param` の HTTP_AUTHORIZATION / PASSWORD / SECRET / TOKEN 系
-  - `ssl_certificate_key data:…` / `engine:…`
-- **パスのマスク:** `mask_paths`（glob）に該当するディレクティブ引数のパスと、ファイル一覧のパスをマスクする。
-- **マスクの追加と無効化:** `mask_header` でヘッダを追加でき、`mask_values off` でマスクを無効にできる（非推奨）。
+| 状態 | 意味 |
+|---|---|
+| static | 変数を含まない |
+| resolved | 変数を含むが、値が 1 つに決まった |
+| conditional | 条件ごとの値の表になった |
+| dynamic | リクエストなどに依存し、決まらない |
 
-## 8. 性能（実測）
+dynamic の値には理由が付く。
+`index.html` では conditional と dynamic を色で示す。
 
-条件: WSL2 / x86-64、`-trimpath -ldflags "-s -w"`、`/usr/bin/time -v` で測定。
+`index.html` は 1 ファイルで完結している。
+nginx が止まっていても、手元にコピーすれば開ける。
 
-| 規模 | 時間 | 最大 RSS | map.json |
-|---|---|---|---|
-| server 300 / location 2,100 / include 301 ファイル | 0.31 秒 | 27 MB | 約 1.9 MB |
-| server 800 / location 5,600 / include 801 ファイル | 1.3〜2.2 秒 | 43 MB | 約 5.2 MB |
-| 同上、ハッシュ不変でスキップ | 0.21 秒 | 38 MB | — |
+## 社内に公開する
 
-- ヒープ上限として `debug.SetMemoryLimit(40MiB)` を入れている。
-- 出力は一時ファイルへ直接ストリーミングで書き、メモリ上にまとめて保持しない。
+出力を nginx で配信するためのサンプルがある。
+ツールはこの設定を適用しない。
 
-## 9. テスト
+1. `/usr/local/share/doc/nginx-sitemap/nginx-sitemap.nginx.conf.sample` をコピーする。
+2. IP、ホスト名、許可する CIDR、証明書のパスを書き換える。
+3. `nginx -t` で確かめてから、nginx を reload する。
 
-- **ゴールデン比較:** `testdata/fixtures/*/golden.map.json` と比較する（`go test ./internal/app`、更新は `-update`）。fixture は**実機の `nginx -t`（Docker の nginx:1.30.0）を通るものだけ**にしている。
-  - 項目: listen 省略・default_server の暗黙決定、server_name の優先順位、location の優先順位、upstream の展開、map の連鎖、set の定数伝播、変数を使った proxy_pass、stream ブロック、include の glob、公開用サンプル、手動エントリ
-- **無効な設定（別枠）:** `testdata/invalid/`。循環 include と構文エラーで、`nginx -t` が失敗することも確認する。
-- **単体テスト:** location 探索、map の照合規則、if の静的評価、upstream のポートエラー、resolver なしの警告、branch-limit、マスク、include の基準パス、glob、循環、ハッシュ、HTML の CSP と外部リソースが無いこと、スキップ、原子的書き込み、DNS スナップショット、規模（600 server）。
-- **fixture の検証:** `scripts/verify-fixtures.sh`。リポジトリを読み取り専用でマウントし、`--network none` で動かす。テスト用の証明書はコンテナ内で作る。`net.ipv4.ip_nonlocal_bind=1` はコンテナの netns の中だけで有効にする（サンプルのプレースホルダ IP に bind するため）。
+サンプルは内部の IP だけで待ち受け、許可した CIDR からだけ見られる。
+配信するのは 3 つの出力ファイルだけで、それ以外は 404 を返す。
 
-## 10. 既知の制限（静的に解決できないケース）
+公開する前に、次の点を確認する。
 
-ツールは**静的解析**であり、`nginx -t` の代わりにはならない（構文の妥当性の最終判断は nginx に任せる）。次のケースは、確定させずに理由コードを付けて出力するか、表現を単純化している。
+- マップには内部の構成がすべて載る。許可する範囲は運用チームに絞る。
+- 必要なら認証を足す。IP の制限だけでは足りないことがある。
+- nginx の前に LB がある場合、IP の制限が効かないことがある。realip の設定を確認する。
+- 秘密情報を伏せる処理は、よくある書き方しか検出しない。初回は `map.json` の中身を確認する。
 
-**リクエスト・接続・環境に依存する値**
+この公開用の server も、nginx の設定の一部としてマップに載る。
 
-1. `$host` `$http_*` `$cookie_*` `$arg_*` `$uri` `$request_uri` `$args` などのリクエスト依存値、正規表現のキャプチャ（`$1` や名前付き）は、シンボルとして残す。
-2. `$remote_addr`、ワイルドカード listen の `$server_addr`、`$ssl_*`、`$proxy_protocol_*`、realip は接続依存。
-3. `try_files` のファイル有無、`if (-f/-d/-e/-x …)`、`$realpath_root`、symlink、index ファイルの有無は、ファイルシステムに依存する。try_files のフォールバックは条件付きの辺として出す。
-4. `$hostname` と `server_name $hostname` はホストに依存する。
-5. DNS について:
-   - 静的な名前は nginx の起動時に一度だけ解決される。いつ解決されたかは分からない。
-   - 変数を使った `*_pass` は、リクエストごとに resolver で解決される。
-   - `server … resolve` は定期的に再解決される。
-   - listen にホスト名を書いた場合は、起動時に解決された全アドレスで待ち受ける。
-   - `resolve on` のスナップショットは、これらの結果と一致しないことがある。
+## 権限とセキュリティ
 
-**正規表現**
+### 読むもの・読まないもの
 
-6. PCRE 固有の構文（先読み・後読み、後方参照、所有量指定子、`\K`、再帰など）は評価しない。
-7. RE2 と PCRE で意味が異なる細部（Unicode のクラスなど）は RE2 の結果になる。
-8. location の正規表現を変換できない場合、内部リダイレクト先の特定は `unsupported-regex` で保留する。
+読むのは、メイン設定と `include` されたファイルだけ。
+鍵、パスワードのファイル、htpasswd、証明書は開かない。
 
-**書き換えと内部リダイレクト**
+### 実行ユーザ
 
-9. `rewrite` の置換にキャプチャがあると、遷移先は dynamic になる。
-10. 内部リダイレクトは 1 段ずつ辺としてリンクするだけで、連鎖（最大 10 回）の追跡や、ループの検出はしない。
-11. フラグなしの `rewrite` で location の rewrite フェーズが終わった後の再探索は、「rewrite」辺として近似している。
-12. `if` の条件は不透明な条件として扱う。分岐内の set は分岐表に、if 内の `*_pass` は `if_blocks` として別に出す。if 内で別の設定ディレクティブを継承する細部（いわゆる "if is evil"）は再現しない。
-13. upstream の応答に依存する遷移は「条件付き」としてだけ表す。例: `X-Accel-Redirect`、`proxy_intercept_errors` と `error_page`、`auth_request` のサブリクエスト、`mirror`。
-14. 別の経路で `set` された変数は、内部リダイレクトを越えて値が残りうるため `condition-dependent` にする。
+専用ユーザ `nginx-sitemap` で動く。
+root は使わない。
 
-**モジュール**
+このユーザには、設定ファイルを読む権限が要る。
+nginx.org のパッケージの既定の権限なら、追加の設定は要らない。
+読めない設定ファイルがある場合は、そのファイルだけ ACL で読めるようにする。
 
-15. njs（`js_set` / `js_content`）、perl、lua、サードパーティのモジュールが定義する変数は `unknown-variable` や `unsupported-module` になる。未知のディレクティブは黙って受け付ける（crossplane の表は 2026-05 時点のもの）。
-16. split_clients のハッシュ割り当て、geo の `ranges` / `proxy` / `delete`、map の `volatile` は評価しない（表として出す）。
-17. `proxy_pass` に URI 部分があるときの、location の prefix の置き換え結果は計算しない（書かれたとおりに出す）。`proxy_redirect` と `sub_filter` も反映しない。
-18. `mail {}` ブロックは解析しない。stream の `pass` ディレクティブは宛先の式を出すだけで、リンクはしない。
+```bash
+setfacl -m u:nginx-sitemap:r /etc/nginx/conf.d/example.conf
+```
 
-**server と listen の選択**
+鍵やパスワードのファイルには、権限を与えない。
 
-19. TLS の SNI と Host ヘッダが食い違う場合や、HTTP/2 のコネクション再利用による server 選択は表現しない。stream の server_name が ssl_preread や SSL を前提にしていることも検証しない。
-20. listen をホスト名で書いた場合、複数アドレスへの展開はしない。reuseport や backlog などのソケットオプションは、記録するだけで意味は解析しない。
-21. listen 省略時のポートは `assume_superuser` という仮定に依存する。
-22. `$server_name` は、明示された server_name が 1 つのときだけ確定させる。
+### 出力の権限
 
-**継承と検証**
+出力先は `/var/lib/nginx-sitemap` で、ディレクトリは 0755 になる。
+ファイルは 0644 で書く。
+nginx のワーカーは、この権限でファイルを読める。
 
-23. 継承の表示は、選んだディレクティブの一覧だけ（`inherited_show` / `inherited_hide` で変更できる）。それ以外のディレクティブの継承は表示しない。allow / deny はクライアントごとの評価をしない。
-24. nginx が出すエラーのうち、listen の重複・default_server の重複・upstream のポート・location のネスト・server_name の書式などは再現している。全部ではない。ディレクティブの引数の数や文脈の検査は crossplane で無効にしている。
+### unit の制限
 
-**パーサとプラットフォーム**
+unit では次の制限をかけている。
 
-25. 構文エラーのあるファイルは、エラー位置より前だけを復元する（以降は無視し、エラーとして記録する）。
-26. 引用符で囲まれた文字列のエスケープの扱いは、crossplane の字句解析に従う。
-27. ファイル名の大文字・小文字を区別しない OS（`ngx_filename_cmp`）は考慮しない（Linux を前提にする）。内部リダイレクト先の URI に `merge_slashes` などの正規化はしない。
-28. http / stream ブロックは最初のものだけを解析する（nginx も重複はエラーにする）。
+- 書き込めるのは出力先だけ
+- `/etc/nginx` と `/etc/nginx-sitemap` は読み取り専用
+- `/etc/ssl/private` などの鍵の置き場所には触れない
+- ネットワークを使わない
+- 特権の取得と、危険なシステムコールを禁止
+- メモリは 64MB、CPU は 50% まで
+- CPU と I/O の優先度を下げる
 
-**バージョン**
+鍵を別の場所に置いている場合は、unit の `InaccessiblePaths=` に追加する。
 
-29. predicate location（1.31.5 以上）には未対応（1.30.0 を前提にしている）。
-30. 新しい listen パラメータは「invalid parameter」と判定する。
+`resolve on` を使う場合だけ、ネットワークの制限を外す。
+`/usr/local/share/doc/nginx-sitemap/resolve.conf.example` を `/etc/systemd/system/nginx-sitemap.service.d/resolve.conf` にコピーする。
 
-**マスク**
+### 秘密情報を伏せる
 
-31. マスクはヒューリスティックで、既知のヘッダ・ディレクティブ・変数名に限る。map の値、`return` の本文、任意のヘッダに書いた秘密は検出しない。必要なら `mask_header` で追加する。
+次の値は、出力で `***masked***` に置き換える。
 
-## 11. サードパーティ
+- Authorization、Proxy-Authorization、Cookie、X-Api-Key、X-Auth-Token ヘッダの値
+- `secure_link_secret` と `secure_link_md5` の値
+- 名前に secret、token、password などを含む `set` 変数の値
+- `fastcgi_param` などの、認証情報らしい名前のパラメータの値
+- `ssl_certificate_key` に直接書かれた鍵
 
-- `github.com/nginxinc/nginx-go-crossplane` v0.4.89 — Apache License 2.0（© F5, Inc.）。バイナリを配布するときはライセンス文を同梱すること。
+社内独自のヘッダは `mask_header` で追加する。
+ファイルパスを伏せたい場合は `mask_paths` を使う。
+
+## 既知の制限
+
+静的な解析なので、次のものは決めきれない。
+決まらない値には、理由を付けて出力する。
+
+### リクエストや環境で決まる値
+
+- Host ヘッダ、Cookie、クエリなど、リクエストで変わる値は決まらない。
+- 接続元のアドレスや TLS の情報は決まらない。
+- ファイルがあるかどうかは分からない。`try_files` の分岐は条件付きで示す。
+- `$hostname` は実行するホストで決まるので、値を出さない。
+
+### DNS
+
+- 名前の解決結果は既定では出さない。名前のまま示す。
+- `resolve on` の結果は、生成した時点のもの。nginx が実際に使っているアドレスと一致するとは限らない。
+- 変数を使った転送先の名前は、nginx がリクエストごとに解決する。どのアドレスになるかは分からない。
+
+### 正規表現
+
+- PCRE だけの書き方は評価しない。先読みや後方参照などが該当する。
+- 評価した正規表現の細かい挙動は、PCRE と違うことがある。
+- location の正規表現を評価できない場合、内部リダイレクト先を決めない。
+
+### 書き換えと内部リダイレクト
+
+- `rewrite` の置き換え先にキャプチャを含む場合、遷移先は決まらない。
+- 内部リダイレクトは 1 段ずつ示す。連鎖やループはたどらない。
+- `if` の条件は評価できるものだけ評価する。それ以外は条件として示す。
+- `if` の中の設定が外側とどう合わさるかは再現しない。
+- 別の location で `set` した変数の値は決まらない。
+- upstream の応答で決まる遷移は、条件付きで示すだけ。`X-Accel-Redirect`、`proxy_intercept_errors`、`auth_request` などが該当する。
+
+### モジュールとディレクティブ
+
+- njs、perl、lua などの変数は決まらない。
+- サードパーティのディレクティブは読み飛ばす。エラーにはしない。
+- `split_clients` の割り当て結果は計算しない。割合の表で示す。
+- `geo` の `ranges` と `proxy` は評価しない。
+- `proxy_pass` の URI 部分による書き換え結果は計算しない。
+- `proxy_redirect` と `sub_filter` は反映しない。
+- `mail` ブロックは解析しない。
+
+### server の選択
+
+- TLS の SNI と Host ヘッダが違う場合の選択は表さない。
+- HTTP/2 で接続を使い回す場合の選択は表さない。
+- listen にホスト名を書いた場合、複数のアドレスに分けない。
+- listen を省略した server のポートは `assume_superuser` の設定で決まる。
+- `$server_name` は、server_name が 1 つだけのときに決める。
+
+### 継承の表示
+
+- location ごとの継承は、選んだディレクティブだけ表示する。
+- `allow` と `deny` は、クライアントごとの判定をしない。
+
+### 構文と検証
+
+- 構文の正しさの最終判断は `nginx -t` に任せる。ツールは nginx のエラーの一部しか再現しない。
+- 構文エラーのあるファイルは、エラーの位置より前だけを解析する。
+- 大文字と小文字を区別しないファイルシステムは考慮しない。
+- 内部リダイレクト先の URI は正規化しない。
+- `http` と `stream` のブロックは、それぞれ最初の 1 つだけ解析する。
+
+### バージョン
+
+- nginx 1.30.0 を前提にしている。
+- 1.31.5 で追加された predicate location には対応しない。
+
+### 秘密情報
+
+- 伏せるのは、決まった名前のヘッダ、ディレクティブ、変数だけ。
+- map の値や `return` の本文に書いた秘密は伏せない。
+
+## ライセンス
+
+[nginx-go-crossplane](https://github.com/nginxinc/nginx-go-crossplane) v0.4.89 を使っている。
+ライセンスは Apache License 2.0。
+ライセンス文は Release の tar.gz に同梱している。
