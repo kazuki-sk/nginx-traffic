@@ -1,0 +1,392 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:ff4cf13dd5259def03722f5c2bea106f1e8cd2765a8abc3a3bee3db6466535be",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/set_propagation/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/set_propagation",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "d59d503ea046e35c1353d59075edd1ee669f0ca88fc31de4b98cde0a18194bba",
+      "size": 986
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "set.example",
+            "server_id": "s1",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:7"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "set.example",
+            "kind": "exact",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "rewrite": {
+          "bindings": [
+            {
+              "src": "nginx.conf:9",
+              "origin": "nginx",
+              "status": "static",
+              "var": "$env",
+              "value": {
+                "kind": "lit",
+                "value": "prod"
+              }
+            },
+            {
+              "src": "nginx.conf:10",
+              "origin": "nginx",
+              "status": "resolved",
+              "var": "$base",
+              "value": {
+                "kind": "lit",
+                "value": "/srv/prod",
+                "had_vars": true
+              }
+            }
+          ]
+        },
+        "locations": [
+          {
+            "src": "nginx.conf:12",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "nginx.conf:13",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "static",
+              "raw": "root $base/html",
+              "target": {
+                "kind": "lit",
+                "value": "/srv/prod/html",
+                "had_vars": true
+              },
+              "note": "root"
+            },
+            "inherited": [
+              {
+                "directive": "root",
+                "args": [
+                  "$base/html"
+                ],
+                "from": "here",
+                "src": "nginx.conf:13"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:15",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L2",
+            "modifier": "prefix",
+            "uri": "/override",
+            "match_group": "prefix",
+            "order": 2,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:16",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$env",
+                  "value": {
+                    "kind": "lit",
+                    "value": "staging"
+                  }
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:17",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "return",
+              "raw": "return 200 \"$env $base\"",
+              "target": {
+                "kind": "lit",
+                "value": "staging /srv/prod",
+                "had_vars": true
+              },
+              "code": 200
+            }
+          },
+          {
+            "src": "nginx.conf:19",
+            "origin": "nginx",
+            "status": "conditional",
+            "id": "s1/L3",
+            "modifier": "prefix",
+            "uri": "/cond",
+            "match_group": "prefix",
+            "order": 3,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:21",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$env",
+                  "value": {
+                    "kind": "lit",
+                    "value": "debug"
+                  },
+                  "under": "($http_x_debug)"
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:23",
+              "origin": "nginx",
+              "status": "conditional",
+              "kind": "return",
+              "raw": "return 200 $env",
+              "target": {
+                "kind": "switch",
+                "on": {
+                  "kind": "sym",
+                  "var": "if",
+                  "reason": "condition-dependent",
+                  "detail": "($http_x_debug)"
+                },
+                "table": "if ($http_x_debug)",
+                "cases": [
+                  {
+                    "match": {
+                      "kind": "if",
+                      "pattern": "($http_x_debug)"
+                    },
+                    "value": {
+                      "kind": "lit",
+                      "value": "debug"
+                    }
+                  }
+                ],
+                "default": {
+                  "kind": "lit",
+                  "value": "prod"
+                },
+                "had_vars": true
+              },
+              "code": 200
+            },
+            "if_blocks": [
+              {
+                "src": "nginx.conf:20",
+                "origin": "nginx",
+                "status": "conditional",
+                "condition": "($http_x_debug)"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:25",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L4",
+            "modifier": "prefix",
+            "uri": "/known",
+            "match_group": "prefix",
+            "order": 4,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:27",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$tier",
+                  "value": {
+                    "kind": "lit",
+                    "value": "gold"
+                  }
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:29",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "return",
+              "raw": "return 200 $tier",
+              "target": {
+                "kind": "lit",
+                "value": "gold",
+                "had_vars": true
+              },
+              "code": 200
+            },
+            "if_blocks": [
+              {
+                "src": "nginx.conf:26",
+                "origin": "nginx",
+                "status": "resolved",
+                "condition": "($env = prod)"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:31",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L5",
+            "modifier": "prefix",
+            "uri": "/port",
+            "match_group": "prefix",
+            "order": 5,
+            "handler": {
+              "src": "nginx.conf:32",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "return",
+              "raw": "return 200 $scheme://$server_name:$server_port",
+              "target": {
+                "kind": "lit",
+                "value": "http://set.example:8080",
+                "had_vars": true
+              },
+              "code": 200
+            }
+          },
+          {
+            "src": "nginx.conf:34",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L6",
+            "modifier": "prefix",
+            "uri": "/nested",
+            "match_group": "prefix",
+            "order": 6,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:35",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$lvl",
+                  "value": {
+                    "kind": "lit",
+                    "value": "outer"
+                  }
+                }
+              ]
+            },
+            "handler": {
+              "origin": "nginx",
+              "status": "static",
+              "kind": "static",
+              "raw": "root html (default)",
+              "target": {
+                "kind": "lit",
+                "value": "html"
+              },
+              "note": "root"
+            },
+            "children": [
+              {
+                "src": "nginx.conf:36",
+                "origin": "nginx",
+                "status": "dynamic",
+                "reasons": [
+                  {
+                    "code": "condition-dependent",
+                    "detail": "$lvl: assigned by set on another execution path"
+                  }
+                ],
+                "id": "s1/L6.1",
+                "modifier": "prefix",
+                "uri": "/nested/inner",
+                "match_group": "prefix",
+                "order": 1,
+                "handler": {
+                  "src": "nginx.conf:38",
+                  "origin": "nginx",
+                  "status": "dynamic",
+                  "reasons": [
+                    {
+                      "code": "condition-dependent",
+                      "detail": "$lvl: assigned by set on another execution path"
+                    }
+                  ],
+                  "kind": "return",
+                  "raw": "return 200 $lvl",
+                  "target": {
+                    "kind": "sym",
+                    "var": "$lvl",
+                    "reason": "condition-dependent",
+                    "detail": "assigned by set on another execution path",
+                    "had_vars": true
+                  },
+                  "code": 200
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

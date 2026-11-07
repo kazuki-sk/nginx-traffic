@@ -1,0 +1,472 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:9b07a4c2d852b41c7356f922e9286357c385a3879376386d1a38a40fbb9ae42f",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/listen_default/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/listen_default",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "c925b6cf042613be8e8b869825de404039495c5510ffc8897825b9a9e74ae890",
+      "size": 1502
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:13",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:80",
+        "proto": "http",
+        "addr": "*",
+        "port": 80,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s3",
+          "explicit": true,
+          "src": "nginx.conf:18"
+        },
+        "servers": [
+          "s1",
+          "s2",
+          "s3"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "explicit-default.example",
+            "server_id": "s3",
+            "src": "nginx.conf:19"
+          },
+          {
+            "rank": 2,
+            "group": 1,
+            "kind": "exact",
+            "name": "first.example",
+            "server_id": "s2",
+            "src": "nginx.conf:14"
+          },
+          {
+            "rank": 3,
+            "group": 1,
+            "kind": "exact",
+            "name": "implicit-a.example",
+            "server_id": "s1",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:13",
+          "nginx.conf:18"
+        ]
+      },
+      {
+        "src": "nginx.conf:25",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:127.0.0.1:80",
+        "proto": "http",
+        "addr": "127.0.0.1",
+        "port": 80,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "socket": "accepted on the *:80 wildcard socket and dispatched by getsockname() (no separate bind)",
+        "default_server": {
+          "server_id": "s4",
+          "explicit": false
+        },
+        "servers": [
+          "s4",
+          "s5"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "loopback-1.example",
+            "server_id": "s4",
+            "src": "nginx.conf:26"
+          },
+          {
+            "rank": 2,
+            "group": 1,
+            "kind": "exact",
+            "name": "loopback-2.example",
+            "server_id": "s5",
+            "src": "nginx.conf:31"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:25",
+          "nginx.conf:30"
+        ]
+      },
+      {
+        "src": "nginx.conf:51",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": true,
+        "params": [
+          "bind"
+        ],
+        "default_server": {
+          "server_id": "s8",
+          "explicit": false
+        },
+        "servers": [
+          "s8"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "bind.example",
+            "server_id": "s8",
+            "src": "nginx.conf:52"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:51"
+        ]
+      },
+      {
+        "src": "nginx.conf:36",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:[::]:8443",
+        "proto": "http",
+        "addr": "[::]",
+        "port": 8443,
+        "family": "inet6",
+        "ssl": true,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": true,
+        "bind": false,
+        "default_server": {
+          "server_id": "s6",
+          "explicit": false
+        },
+        "servers": [
+          "s6",
+          "s7"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "v6-pp.example",
+            "server_id": "s7",
+            "src": "nginx.conf:45"
+          },
+          {
+            "rank": 2,
+            "group": 1,
+            "kind": "exact",
+            "name": "v6.example",
+            "server_id": "s6",
+            "src": "nginx.conf:38"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:36",
+          "nginx.conf:44"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "implicit-a.example",
+            "kind": "exact",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "listens": [
+          "http:*:80"
+        ],
+        "implicit_listen": {
+          "value": "*:80",
+          "basis": "no listen directive; assume_superuser=on → *:80 (doc: ngx_http_core_module#listen \"If the directive is not present then either *:80 is used if nginx runs with the superuser privileges, or *:8000 otherwise\"; src: ngx_http_core_server getuid()==0 ? 80 : 8000)"
+        },
+        "handler": {
+          "src": "nginx.conf:9",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 a",
+          "target": {
+            "kind": "lit",
+            "value": "a"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:12",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s2",
+        "names": [
+          {
+            "name": "first.example",
+            "kind": "exact",
+            "src": "nginx.conf:14"
+          }
+        ],
+        "listens": [
+          "http:*:80"
+        ],
+        "handler": {
+          "src": "nginx.conf:15",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 first",
+          "target": {
+            "kind": "lit",
+            "value": "first"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:17",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s3",
+        "names": [
+          {
+            "name": "explicit-default.example",
+            "kind": "exact",
+            "src": "nginx.conf:19"
+          }
+        ],
+        "listens": [
+          "http:*:80"
+        ],
+        "handler": {
+          "src": "nginx.conf:20",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 default",
+          "target": {
+            "kind": "lit",
+            "value": "default"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:24",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s4",
+        "names": [
+          {
+            "name": "loopback-1.example",
+            "kind": "exact",
+            "src": "nginx.conf:26"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:80"
+        ],
+        "handler": {
+          "src": "nginx.conf:27",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 lo1",
+          "target": {
+            "kind": "lit",
+            "value": "lo1"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:29",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s5",
+        "names": [
+          {
+            "name": "loopback-2.example",
+            "kind": "exact",
+            "src": "nginx.conf:31"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:80"
+        ],
+        "handler": {
+          "src": "nginx.conf:32",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 lo2",
+          "target": {
+            "kind": "lit",
+            "value": "lo2"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:35",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s6",
+        "names": [
+          {
+            "name": "v6.example",
+            "kind": "exact",
+            "src": "nginx.conf:38"
+          }
+        ],
+        "listens": [
+          "http:[::]:8443"
+        ],
+        "handler": {
+          "src": "nginx.conf:41",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 v6",
+          "target": {
+            "kind": "lit",
+            "value": "v6"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": [],
+        "inherited": [
+          {
+            "directive": "http2",
+            "args": [
+              "on"
+            ],
+            "from": "here",
+            "src": "nginx.conf:37"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:43",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s7",
+        "names": [
+          {
+            "name": "v6-pp.example",
+            "kind": "exact",
+            "src": "nginx.conf:45"
+          }
+        ],
+        "listens": [
+          "http:[::]:8443"
+        ],
+        "handler": {
+          "src": "nginx.conf:48",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 v6pp",
+          "target": {
+            "kind": "lit",
+            "value": "v6pp"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      },
+      {
+        "src": "nginx.conf:50",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s8",
+        "names": [
+          {
+            "name": "bind.example",
+            "kind": "exact",
+            "src": "nginx.conf:52"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "src": "nginx.conf:53",
+          "origin": "nginx",
+          "status": "static",
+          "kind": "return",
+          "raw": "return 200 bind",
+          "target": {
+            "kind": "lit",
+            "value": "bind"
+          },
+          "code": 200,
+          "note": "server-level return: every request to this server ends here"
+        },
+        "locations": []
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

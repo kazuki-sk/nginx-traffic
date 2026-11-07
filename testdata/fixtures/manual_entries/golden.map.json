@@ -1,0 +1,282 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:d80f898683aac6f5d66289e7fa650d891df0e1b56de8c132d24123ad131e884e",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/manual_entries/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/manual_entries",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true,
+    "manual_file": "<REPO>/testdata/fixtures/manual_entries/sitemap.conf"
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "5867a63f0e0251e6ee7af371f31944eb660e6cb811d5f4f0c044c1bcd7f42a8d",
+      "size": 636
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:9",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "api.example.internal",
+            "server_id": "s1",
+            "src": "nginx.conf:10"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:9"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:8",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "api.example.internal",
+            "kind": "exact",
+            "src": "nginx.conf:10"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:11",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:12",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://app_backend",
+              "target": {
+                "kind": "lit",
+                "value": "http://app_backend"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:12",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://app_backend",
+                  "upstream": "app_backend",
+                  "kind": "upstream"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Authorization",
+                  "***masked***"
+                ],
+                "from": "here",
+                "src": "nginx.conf:13"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "X-Api-Key",
+                  "***masked***"
+                ],
+                "from": "here",
+                "src": "nginx.conf:14"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "X-Real-IP",
+                  "$remote_addr"
+                ],
+                "from": "here",
+                "src": "nginx.conf:15"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:17",
+            "origin": "nginx",
+            "status": "resolved",
+            "id": "s1/L2",
+            "modifier": "prefix",
+            "uri": "/secure/",
+            "match_group": "prefix",
+            "order": 2,
+            "rewrite": {
+              "bindings": [
+                {
+                  "src": "nginx.conf:19",
+                  "origin": "nginx",
+                  "status": "static",
+                  "var": "$api_token",
+                  "value": {
+                    "kind": "lit",
+                    "value": "***masked***"
+                  }
+                }
+              ]
+            },
+            "handler": {
+              "src": "nginx.conf:20",
+              "origin": "nginx",
+              "status": "resolved",
+              "kind": "return",
+              "raw": "return 200 $api_token",
+              "target": {
+                "kind": "lit",
+                "value": "***masked***",
+                "had_vars": true
+              },
+              "code": 200
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "src": "sitemap.conf:19",
+            "origin": "manual",
+            "status": "declared",
+            "owner": "team-api",
+            "note": "外部 SaaS からの Webhook を受ける"
+          }
+        ]
+      }
+    ],
+    "upstreams": [
+      {
+        "src": "nginx.conf:5",
+        "origin": "nginx",
+        "status": "static",
+        "name": "app_backend",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:6",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.4.0.1:8080",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s1/L1"
+        ],
+        "annotations": [
+          {
+            "src": "sitemap.conf:23",
+            "origin": "manual",
+            "status": "declared",
+            "expect": [
+              "10.4.0.1:8080",
+              "10.4.0.2:8080"
+            ]
+          }
+        ]
+      }
+    ],
+    "tables": []
+  },
+  "stream": null,
+  "external": [
+    {
+      "src": "sitemap.conf:8",
+      "origin": "manual",
+      "status": "declared",
+      "name": "grafana-mon",
+      "group": "monitoring",
+      "endpoints": [
+        "https://grafana.mon.internal:3000"
+      ],
+      "listens": [
+        "10.0.5.10:3000 ssl"
+      ],
+      "backends": [
+        "10.0.5.10:3000"
+      ],
+      "depends": [
+        "prometheus-mon"
+      ],
+      "owner": "infra-mon",
+      "note": "共通基盤（このnginx）から独立。nginx 障害時の監視用",
+      "reviewed": "2026-10-01"
+    },
+    {
+      "src": "manual.d/prometheus.conf:1",
+      "origin": "manual",
+      "status": "declared",
+      "name": "prometheus-mon",
+      "group": "monitoring",
+      "endpoints": [
+        "http://prometheus.mon.internal:9090"
+      ],
+      "backends": [
+        "10.0.5.11:9090"
+      ],
+      "owner": "infra-mon",
+      "reviewed": "2025-01-15"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    {
+      "code": "stale-manual-entry",
+      "message": "external \"prometheus-mon\" was last reviewed 2025-01-15 (older than stale_after)",
+      "src": "manual.d/prometheus.conf:1"
+    },
+    {
+      "code": "stale-annotation",
+      "message": "annotate server \"gone.example.internal\": no such element in the nginx configuration",
+      "src": "sitemap.conf:28"
+    }
+  ]
+}

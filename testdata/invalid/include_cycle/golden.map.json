@@ -1,0 +1,119 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:0664b31c9b26f376256252619aa5cb88778e140ef57980b4639a1c8e3deac8e6",
+  "nginx": {
+    "main": "<REPO>/testdata/invalid/include_cycle/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/invalid/include_cycle",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "a.conf",
+      "sha256": "7b36726be869b278ddc1b88bd294457542b758beb9f5fa89c0487f1a42924a9f",
+      "size": 65,
+      "included_from": [
+        "nginx.conf:6"
+      ]
+    },
+    {
+      "path": "b.conf",
+      "sha256": "a1ef0859bf552e775866b01a5084f424ac236d7c57aefb3d650176a279661eee",
+      "size": 16,
+      "included_from": [
+        "nginx.conf:6 \u003e a.conf:2"
+      ]
+    },
+    {
+      "path": "nginx.conf",
+      "sha256": "78e8e530ec22abd9fe50cee81247a188c929954294ef65334058bb75ddba4d7c",
+      "size": 91
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "a.conf:1",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "cyc.example",
+            "server_id": "s1",
+            "src": "a.conf:1"
+          }
+        ],
+        "declared_at": [
+          "a.conf:1"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "a.conf:1",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "cyc.example",
+            "kind": "exact",
+            "src": "a.conf:1"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "handler": {
+          "origin": "nginx",
+          "status": "static",
+          "kind": "static",
+          "raw": "root html (default)",
+          "target": {
+            "kind": "lit",
+            "value": "html"
+          },
+          "note": "used when no location matches"
+        },
+        "locations": []
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [
+    {
+      "code": "cycle",
+      "message": "include cycle: a.conf is already being included (nginx.conf:6 → a.conf:2 → b.conf:1)",
+      "src": "b.conf:1"
+    }
+  ],
+  "warnings": []
+}

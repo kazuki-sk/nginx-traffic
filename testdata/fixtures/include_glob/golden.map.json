@@ -1,0 +1,228 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:393f251a15a833c681b4d50ffd2b28e87dd31b68b033a5c3724e1fae8ba23a14",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/include_glob/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/include_glob",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "conf.d/02-a.conf",
+      "sha256": "89331a41c0e9d7e9521362ce3a11011a5d98853c8ee917379b69f37f6e8d3841",
+      "size": 118,
+      "included_from": [
+        "nginx.conf:6"
+      ]
+    },
+    {
+      "path": "conf.d/10-b.conf",
+      "sha256": "e9ff4d2ba8fb5a710b65e30ded348cc9f6cb71b6cbbd386791985d086c9a1766",
+      "size": 253,
+      "included_from": [
+        "nginx.conf:6"
+      ]
+    },
+    {
+      "path": "nginx.conf",
+      "sha256": "59d256df5a166ec9f151b8d31f232d9656f95ada230c6bc9382f14d9e3dd7b55",
+      "size": 98
+    },
+    {
+      "path": "sub/common.inc",
+      "sha256": "589e9d0a729bf4391dc6821271f651e03a970937fd4d9f7dc8357721cbf92f4d",
+      "size": 25,
+      "included_from": [
+        "nginx.conf:6 \u003e conf.d/02-a.conf:4",
+        "nginx.conf:6 \u003e conf.d/10-b.conf:6"
+      ]
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "conf.d/02-a.conf:2",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1",
+          "s2"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "a.example",
+            "server_id": "s1",
+            "src": "conf.d/02-a.conf:3"
+          },
+          {
+            "rank": 2,
+            "group": 1,
+            "kind": "exact",
+            "name": "b.example",
+            "server_id": "s2",
+            "src": "conf.d/10-b.conf:5"
+          }
+        ],
+        "declared_at": [
+          "conf.d/02-a.conf:2",
+          "conf.d/10-b.conf:4"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "conf.d/02-a.conf:1",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "a.example",
+            "kind": "exact",
+            "src": "conf.d/02-a.conf:3"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "conf.d/02-a.conf:5",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "conf.d/02-a.conf:5",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 200 a",
+              "target": {
+                "kind": "lit",
+                "value": "a"
+              },
+              "code": 200
+            },
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Common",
+                  "yes"
+                ],
+                "from": "server",
+                "src": "sub/common.inc:1"
+              }
+            ]
+          }
+        ],
+        "inherited": [
+          {
+            "directive": "add_header",
+            "args": [
+              "X-Common",
+              "yes"
+            ],
+            "from": "here",
+            "src": "sub/common.inc:1"
+          }
+        ]
+      },
+      {
+        "src": "conf.d/10-b.conf:3",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s2",
+        "names": [
+          {
+            "name": "b.example",
+            "kind": "exact",
+            "src": "conf.d/10-b.conf:5"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "conf.d/10-b.conf:7",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "conf.d/10-b.conf:7",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 200 b",
+              "target": {
+                "kind": "lit",
+                "value": "b"
+              },
+              "code": 200
+            },
+            "inherited": [
+              {
+                "directive": "add_header",
+                "args": [
+                  "X-Common",
+                  "yes"
+                ],
+                "from": "server",
+                "src": "sub/common.inc:1"
+              }
+            ]
+          }
+        ],
+        "inherited": [
+          {
+            "directive": "add_header",
+            "args": [
+              "X-Common",
+              "yes"
+            ],
+            "from": "here",
+            "src": "sub/common.inc:1"
+          }
+        ]
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [],
+  "warnings": []
+}

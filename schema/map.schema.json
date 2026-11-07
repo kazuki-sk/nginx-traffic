@@ -1,0 +1,1997 @@
+{
+  "$defs": {
+    "Annotation": {
+      "additionalProperties": false,
+      "description": "Manual note attached to an nginx-derived element; never changes nginx-derived facts.",
+      "properties": {
+        "expect": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "note": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "origin",
+        "status"
+      ],
+      "type": "object"
+    },
+    "Backend": {
+      "additionalProperties": false,
+      "properties": {
+        "dns": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Snapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "upstream": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "when": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "url",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "Binding": {
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "under": {
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "var": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "var",
+        "value"
+      ],
+      "type": "object"
+    },
+    "Case": {
+      "additionalProperties": false,
+      "properties": {
+        "match": {
+          "$ref": "#/$defs/Matcher"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "match",
+        "value"
+      ],
+      "type": "object"
+    },
+    "DNSInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "names",
+            "snapshot"
+          ],
+          "type": "string"
+        },
+        "snapshot_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "type": "object"
+    },
+    "DefaultRef": {
+      "additionalProperties": false,
+      "properties": {
+        "explicit": {
+          "type": "boolean"
+        },
+        "server_id": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "server_id",
+        "explicit"
+      ],
+      "type": "object"
+    },
+    "Diag": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "Edge": {
+      "additionalProperties": false,
+      "description": "Internal redirect / transition (rewrite, error_page, try_files fallback, conditional return/redirect).",
+      "properties": {
+        "code": {
+          "type": "integer"
+        },
+        "condition": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "raw": {
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target_location": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "kind",
+        "raw"
+      ],
+      "type": "object"
+    },
+    "Expr": {
+      "additionalProperties": false,
+      "description": "Partially evaluated nginx string expression. lit: literal; sym: unknown value (var + reason); concat: parts; switch: branch table (first matching case, else default).",
+      "properties": {
+        "cases": {
+          "items": {
+            "$ref": "#/$defs/Case"
+          },
+          "type": "array"
+        },
+        "default": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "detail": {
+          "type": "string"
+        },
+        "had_vars": {
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "lit",
+            "sym",
+            "concat",
+            "switch"
+          ],
+          "type": "string"
+        },
+        "on": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parts": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Expr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "table": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "var": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "External": {
+      "additionalProperties": false,
+      "description": "Manually declared service that does not go through nginx (origin=manual, status=declared).",
+      "properties": {
+        "backends": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "depends": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "endpoints": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "group": {
+          "type": "string"
+        },
+        "listens": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "reviewed": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "name"
+      ],
+      "type": "object"
+    },
+    "File": {
+      "additionalProperties": false,
+      "properties": {
+        "included_from": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "size"
+      ],
+      "type": "object"
+    },
+    "HTTP": {
+      "additionalProperties": false,
+      "properties": {
+        "listens": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Listen"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "servers": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Server"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "tables": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Table"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "upstreams": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Upstream"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "listens",
+        "servers",
+        "upstreams",
+        "tables"
+      ],
+      "type": "object"
+    },
+    "Handler": {
+      "additionalProperties": false,
+      "properties": {
+        "backends": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Backend"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "code": {
+          "type": "integer"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "raw": {
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "IfBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "handler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Handler"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "condition"
+      ],
+      "type": "object"
+    },
+    "Implicit": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "basis"
+      ],
+      "type": "object"
+    },
+    "Inherited": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "directive": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "directive",
+        "args",
+        "from"
+      ],
+      "type": "object"
+    },
+    "Listen": {
+      "additionalProperties": false,
+      "description": "One address:port pair with the servers bound to it, its default server and the server_name selection order.",
+      "properties": {
+        "addr": {
+          "type": "string"
+        },
+        "bind": {
+          "type": "boolean"
+        },
+        "declared_at": {
+          "items": {
+            "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "default_server": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DefaultRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "family": {
+          "enum": [
+            "inet",
+            "inet6",
+            "unix",
+            "name"
+          ],
+          "type": "string"
+        },
+        "http2": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "implicit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Implicit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name_index": {
+          "items": {
+            "$ref": "#/$defs/NameEntry"
+          },
+          "type": "array"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "proto": {
+          "enum": [
+            "http",
+            "stream-tcp",
+            "stream-udp"
+          ],
+          "type": "string"
+        },
+        "proxy_protocol": {
+          "type": "boolean"
+        },
+        "quic": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "servers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "socket": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ssl": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "id",
+        "proto",
+        "addr",
+        "port",
+        "family",
+        "ssl",
+        "http2",
+        "quic",
+        "proxy_protocol",
+        "bind",
+        "default_server",
+        "servers",
+        "name_index",
+        "declared_at"
+      ],
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "description": "location block; match_group/order express the nginx search order.",
+      "properties": {
+        "auto_redirect": {
+          "type": "boolean"
+        },
+        "children": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Location"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Edge"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "handler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Handler"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "if_blocks": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IfBlock"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "inherited": {
+          "items": {
+            "$ref": "#/$defs/Inherited"
+          },
+          "type": "array"
+        },
+        "internal": {
+          "type": "boolean"
+        },
+        "match_group": {
+          "enum": [
+            "exact",
+            "prefix-noregex",
+            "prefix",
+            "regex",
+            "named"
+          ],
+          "type": "string"
+        },
+        "modifier": {
+          "enum": [
+            "=",
+            "^~",
+            "~",
+            "~*",
+            "prefix",
+            "@"
+          ],
+          "type": "string"
+        },
+        "order": {
+          "type": "integer"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "rewrite": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Program"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "id",
+        "modifier",
+        "uri",
+        "match_group",
+        "order",
+        "handler"
+      ],
+      "type": "object"
+    },
+    "Map": {
+      "additionalProperties": false,
+      "description": "nginx-sitemap output. Every element carries src (file:line), origin and status. Listens reference servers by id; handlers reference upstreams by name.",
+      "properties": {
+        "config_hash": {
+          "type": "string"
+        },
+        "dns": {
+          "$ref": "#/$defs/DNSInfo"
+        },
+        "errors": {
+          "items": {
+            "$ref": "#/$defs/Diag"
+          },
+          "type": "array"
+        },
+        "external": {
+          "items": {
+            "$ref": "#/$defs/External"
+          },
+          "type": "array"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/File"
+          },
+          "type": "array"
+        },
+        "generated_at": {
+          "type": "string"
+        },
+        "http": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HTTP"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nginx": {
+          "$ref": "#/$defs/NginxInfo"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "stream": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Stream"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_version": {
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "$ref": "#/$defs/Diag"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "generated_at",
+        "tool_version",
+        "config_hash",
+        "nginx",
+        "dns",
+        "files",
+        "http",
+        "stream",
+        "external",
+        "errors",
+        "warnings"
+      ],
+      "type": "object"
+    },
+    "Matcher": {
+      "additionalProperties": false,
+      "properties": {
+        "ci": {
+          "type": "boolean"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "pattern": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "pattern"
+      ],
+      "type": "object"
+    },
+    "Member": {
+      "additionalProperties": false,
+      "properties": {
+        "backup": {
+          "type": "boolean"
+        },
+        "down": {
+          "type": "boolean"
+        },
+        "fail_timeout": {
+          "type": "string"
+        },
+        "max_conns": {
+          "type": "integer"
+        },
+        "max_fails": {
+          "type": "integer"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "resolve": {
+          "type": "boolean"
+        },
+        "server": {
+          "type": "string"
+        },
+        "snapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Snapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "weight": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "server",
+        "weight",
+        "max_fails",
+        "fail_timeout",
+        "max_conns",
+        "backup",
+        "down",
+        "resolve"
+      ],
+      "type": "object"
+    },
+    "NameEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "type": "integer"
+        },
+        "ignored": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rank": {
+          "type": "integer"
+        },
+        "server_id": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "rank",
+        "group",
+        "kind",
+        "name",
+        "server_id"
+      ],
+      "type": "object"
+    },
+    "NginxInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "assume_superuser": {
+          "type": "boolean"
+        },
+        "assumed_version": {
+          "type": "string"
+        },
+        "conf_prefix": {
+          "type": "string"
+        },
+        "main": {
+          "type": "string"
+        },
+        "manual_file": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "main",
+        "conf_prefix",
+        "assume_superuser"
+      ],
+      "type": "object"
+    },
+    "Program": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Binding"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Edge"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Reason": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
+    "Server": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Edge"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "handler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Handler"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "implicit_listen": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Implicit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inherited": {
+          "items": {
+            "$ref": "#/$defs/Inherited"
+          },
+          "type": "array"
+        },
+        "listens": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "locations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Location"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "names": {
+          "items": {
+            "$ref": "#/$defs/ServerName"
+          },
+          "type": "array"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "rewrite": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Program"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "id",
+        "names",
+        "listens",
+        "locations"
+      ],
+      "type": "object"
+    },
+    "ServerName": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "Snapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "addrs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "at": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "at",
+        "note"
+      ],
+      "type": "object"
+    },
+    "Stream": {
+      "additionalProperties": false,
+      "properties": {
+        "listens": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Listen"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "servers": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StreamServer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "tables": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Table"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "upstreams": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Upstream"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "listens",
+        "servers",
+        "upstreams",
+        "tables"
+      ],
+      "type": "object"
+    },
+    "StreamServer": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "handler": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Handler"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "inherited": {
+          "items": {
+            "$ref": "#/$defs/Inherited"
+          },
+          "type": "array"
+        },
+        "listens": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "names": {
+          "items": {
+            "$ref": "#/$defs/ServerName"
+          },
+          "type": "array"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "id",
+        "listens",
+        "handler"
+      ],
+      "type": "object"
+    },
+    "Table": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TableEntry"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/TableEntry"
+          },
+          "type": "array"
+        },
+        "hostnames": {
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "map",
+            "geo",
+            "split_clients"
+          ],
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "source": {
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "var": {
+          "type": "string"
+        },
+        "volatile": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "kind",
+        "var",
+        "source",
+        "entries"
+      ],
+      "type": "object"
+    },
+    "TableEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "match": {
+          "$ref": "#/$defs/Matcher"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "match",
+        "value"
+      ],
+      "type": "object"
+    },
+    "Upstream": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Annotation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "balancer": {
+          "type": "string"
+        },
+        "directives": {
+          "items": {
+            "$ref": "#/$defs/Inherited"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "explicit",
+            "implicit"
+          ],
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Member"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "used_by": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "name",
+        "kind",
+        "balancer",
+        "members",
+        "used_by"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://example.invalid/nginx-sitemap/map.schema.json",
+  "$ref": "#/$defs/Map",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "nginx-sitemap output. Every element carries src (file:line), origin and status. Listens reference servers by id; handlers reference upstreams by name.",
+  "title": "nginx-sitemap map.json"
+}

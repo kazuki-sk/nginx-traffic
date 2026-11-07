@@ -1,0 +1,97 @@
+package emit
+
+import (
+	"bytes"
+	"crypto/sha256"
+	_ "embed"
+	"encoding/base64"
+	"encoding/json"
+	"html/template"
+	"io"
+	"strings"
+
+	"nginx-sitemap/internal/model"
+)
+
+//go:embed assets/app.js
+var appJS string
+
+//go:embed assets/app.css
+var appCSS string
+
+// The page loads nothing external. CSP allows only the inline script/style
+// by hash; the JSON data block is not executable.
+var page = template.Must(template.New("index").Parse(`<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{.CSP}}
+<meta name="referrer" content="no-referrer">
+<title>nginx sitemap</title>
+<style>{{.CSS}}</style>
+</head>
+<body>
+<header id="hdr">
+<h1>nginx sitemap</h1>
+<div class="meta"></div>
+<div class="controls">
+<input id="q" type="search" placeholder="server_name / location / 宛先 / upstream で検索" aria-label="検索">
+<label><input id="onlydyn" type="checkbox"> dynamic / conditional のみ</label>
+</div>
+<div class="controls"><nav class="tabs" id="tabs" aria-label="表示切替"></nav></div>
+</header>
+<main>
+<div class="stats" id="stats"></div>
+<div id="content"></div>
+<noscript>この表示には JavaScript が必要です。機械可読データは map.json を参照してください。</noscript>
+</main>
+<script type="application/json" id="data">{{.Data}}</script>
+<script>{{.JS}}</script>
+</body>
+</html>
+`))
+
+var htmlHead, htmlTail string
+
+func init() {
+	const marker = "\x00DATA\x00"
+	var b bytes.Buffer
+	if err := page.Execute(&b, map[string]any{
+		"CSS":  template.CSS(appCSS),
+		"JS":   template.JS(appJS),
+		"Data": template.JS(marker),
+		// Built outside the template so the base64 hashes are not entity-escaped.
+		"CSP": template.HTML(`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '` +
+			cspHash(appJS) + `'; style-src '` + cspHash(appCSS) + `'; img-src data:; base-uri 'none'; form-action 'none'">`),
+	}); err != nil {
+		panic(err)
+	}
+	htmlHead, htmlTail, _ = strings.Cut(b.String(), marker)
+}
+
+// WriteHTML streams index.html with the map embedded. json.Encoder escapes
+// <, > and & (SetEscapeHTML defaults to true), so the data can never close
+// the script element.
+func WriteHTML(w io.Writer, m *model.Map) error {
+	if _, err := io.WriteString(w, htmlHead); err != nil {
+		return err
+	}
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		return err
+	}
+	_, err := io.WriteString(w, htmlTail)
+	return err
+}
+
+func cspHash(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return "sha256-" + base64.StdEncoding.EncodeToString(sum[:])
+}
+
+// HTML renders index.html into memory.
+func HTML(m *model.Map) ([]byte, error) {
+	var b bytes.Buffer
+	err := WriteHTML(&b, m)
+	return b.Bytes(), err
+}

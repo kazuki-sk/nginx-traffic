@@ -1,0 +1,56 @@
+# /etc/nginx-sitemap/sitemap.conf — settings and manual entries.
+# nginx-like syntax; parsed with the same parser, so every manual entry gets
+# file:line in the output. Keep this file OUTSIDE /etc/nginx so that nginx
+# never includes it.
+
+settings {
+    nginx_conf        /etc/nginx/nginx.conf;
+    nginx_version     1.30.0;           # used for $nginx_version and version-dependent checks
+    # listen without a listen directive: *:80 when nginx runs as superuser
+    # (the nginx.org packages start the master as root), *:8000 otherwise.
+    assume_superuser  on;
+    output_dir        /var/lib/nginx-sitemap;
+    skip_unchanged    on;               # do nothing when the configuration hash is unchanged
+    resolve           off;              # on = add a generation-time DNS snapshot (needs the systemd drop-in)
+    dot               on;               # also write map.dot (Graphviz)
+
+    # Masking. Values of Authorization / Proxy-Authorization / Cookie /
+    # X-Api-Key / X-Auth-Token headers, secure_link secrets, secret-looking
+    # `set` variables and *_param values are masked by default.
+    #mask_header      X-Internal-Token;
+    #mask_paths       /etc/nginx/tls/* /etc/ssl/private/*;
+    #mask_values      on;
+
+    # Inherited directives shown per location (added to / removed from the default list).
+    #inherited_show   proxy_read_timeout proxy_buffering;
+    #inherited_hide   index;
+
+    stale_after       180d;             # warn when an external entry's "reviewed" date is older
+}
+
+# ---- Things that do not go through this nginx --------------------------
+# Example: the monitoring stack is deliberately independent of the shared
+# nginx so that it keeps working when nginx is down.
+#
+#external grafana-mon {
+#    group     monitoring;
+#    endpoint  https://grafana.mon.internal:3000;
+#    listen    10.0.5.10:3000 ssl;
+#    backend   10.0.5.10:3000;
+#    depends   prometheus-mon;
+#    owner     infra-mon;
+#    note      "共通基盤（nginx）から独立。nginx 障害時の監視用";
+#    reviewed  2026-11-01;
+#}
+
+# ---- Notes on nginx-derived elements (never change them) ---------------
+#annotate server api.example.internal {
+#    owner  team-api;
+#    note   "外部 SaaS からの Webhook を受ける";
+#}
+#annotate upstream app_backend {
+#    expect 10.0.1.11:8080;     # declared expectation, shown separately from nginx-derived members
+#}
+
+# Split manual entries into several files if you like:
+#include /etc/nginx-sitemap/manual.d/*.conf;

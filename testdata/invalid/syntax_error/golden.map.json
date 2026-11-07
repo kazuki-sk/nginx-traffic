@@ -1,0 +1,162 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "sha256:29e17cadbb902b2fedfd68a3853f7538088477e3109cc9fe2871e8cfc8ea5db0",
+  "nginx": {
+    "main": "<REPO>/testdata/invalid/syntax_error/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/invalid/syntax_error",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "da16b9a70641a500cc0886ecabd105ccb383ce597d998d126d347cc369274ee4",
+      "size": 299
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": false
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "ok.example",
+            "server_id": "s1",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:7"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:6",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "ok.example",
+            "kind": "exact",
+            "src": "nginx.conf:8"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:9",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "nginx.conf:9",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 200 ok",
+              "target": {
+                "kind": "lit",
+                "value": "ok"
+              },
+              "code": 200
+            }
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:11",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s2",
+        "names": [
+          {
+            "name": "",
+            "kind": "empty"
+          }
+        ],
+        "listens": [],
+        "locations": [
+          {
+            "src": "nginx.conf:14",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "nginx.conf:14",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 200 broken",
+              "target": {
+                "kind": "lit",
+                "value": "broken"
+              },
+              "code": 200
+            }
+          }
+        ]
+      }
+    ],
+    "upstreams": [],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "errors": [
+    {
+      "code": "parse-error",
+      "message": "invalid parameter \"server_name\" in \"listen\"",
+      "src": "nginx.conf:12"
+    },
+    {
+      "code": "parse-error",
+      "message": "recovered the part of nginx.conf before line 16; everything after it is ignored",
+      "src": "nginx.conf:16"
+    },
+    {
+      "code": "parse-error",
+      "message": "unexpected end of file, expecting \"}\" in <REPO>/testdata/invalid/syntax_error/nginx.conf:17",
+      "src": "nginx.conf:17"
+    }
+  ],
+  "warnings": []
+}
