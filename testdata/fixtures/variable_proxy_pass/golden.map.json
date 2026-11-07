@@ -2,7 +2,7 @@
   "schema_version": "1",
   "generated_at": "2026-11-07T12:00:00Z",
   "tool_version": "test",
-  "config_hash": "sha256:22c30d0e81b99584eb99e4203d972b851b0315344e45bcc232a4d35544ac116f",
+  "config_hash": "<HASH>",
   "nginx": {
     "main": "<REPO>/testdata/fixtures/variable_proxy_pass/nginx.conf",
     "conf_prefix": "<REPO>/testdata/fixtures/variable_proxy_pass",

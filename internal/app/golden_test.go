@@ -7,6 +7,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -57,6 +58,10 @@ func runFixture(t *testing.T, dir string) (*Outcome, []byte) {
 	js := ind.Bytes()
 	// Normalise machine-specific absolute paths.
 	js = bytes.ReplaceAll(js, []byte(repoRoot(t)), []byte("<REPO>"))
+	// The hash covers the paths of files read; files outside the conf prefix
+	// (publish_sample includes ../../../deploy/...) are absolute and differ
+	// per checkout. Hash behaviour is tested in TestConfigHash.
+	js = regexp.MustCompile(`"config_hash": "sha256:[0-9a-f]{64}"`).ReplaceAll(js, []byte(`"config_hash": "<HASH>"`))
 	return res, js
 }
 

@@ -2,7 +2,7 @@
   "schema_version": "1",
   "generated_at": "2026-11-07T12:00:00Z",
   "tool_version": "test",
-  "config_hash": "sha256:5a8b4dcd0b6da62e0e449d9768d5336efe843c5289c1bf71c92977219d803771",
+  "config_hash": "<HASH>",
   "nginx": {
     "main": "<REPO>/testdata/fixtures/location_priority/nginx.conf",
     "conf_prefix": "<REPO>/testdata/fixtures/location_priority",

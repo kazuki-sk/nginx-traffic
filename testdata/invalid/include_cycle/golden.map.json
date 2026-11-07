@@ -2,7 +2,7 @@
   "schema_version": "1",
   "generated_at": "2026-11-07T12:00:00Z",
   "tool_version": "test",
-  "config_hash": "sha256:0664b31c9b26f376256252619aa5cb88778e140ef57980b4639a1c8e3deac8e6",
+  "config_hash": "<HASH>",
   "nginx": {
     "main": "<REPO>/testdata/invalid/include_cycle/nginx.conf",
     "conf_prefix": "<REPO>/testdata/invalid/include_cycle",
