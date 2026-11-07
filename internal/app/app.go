@@ -194,6 +194,13 @@ func Run(o Options) (*Outcome, error) {
 		products = append(products, product{"map.dot", emit.WriteDOT})
 	}
 	products = append(products, product{"map.json", emit.WriteJSON})
+	if st.OutputDir != "" {
+		// Under systemd StateDirectory= creates it; for manual runs create it
+		// here (0755 so that the nginx worker can traverse it).
+		if err := os.MkdirAll(st.OutputDir, 0o755); err != nil {
+			return &Outcome{Code: ExitFatal}, fmt.Errorf("output directory: %w", err)
+		}
+	}
 	for _, p := range products {
 		if st.OutputDir == "" {
 			var b bytes.Buffer

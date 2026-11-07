@@ -1,0 +1,73 @@
+# Build and publish release tarballs when a version tag is pushed.
+#   git tag v0.1.0 && git push origin v0.1.0
+# Produces nginx-sitemap-<tag>-linux-{amd64,arm64}.tar.gz (+ .sha256) on the
+# GitHub Release. Install on the target without Go: see README §3.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write   # create the release and upload assets
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # git describe
+
+      # Go 1.27 series, latest patch at build time (standard-library security
+      # fixes are compiled into the static binary, so rebuild on Go patches).
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.x"
+          check-latest: true
+          cache: true
+
+      - name: Check formatting and vet
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+          go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Validate fixtures with nginx -t (nginx:1.30.0)
+        run: scripts/verify-fixtures.sh nginx:1.30.0
+
+      - name: Build tarballs
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          for arch in amd64 arm64; do
+            make dist VERSION="$VERSION" GOOS=linux GOARCH="$arch"
+          done
+          ls -l dist/*.tar.gz*
+
+      - name: Smoke-test the amd64 tarball install (staged, no root)
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          d=$(mktemp -d)
+          tar -C "$d" -xzf "dist/nginx-sitemap-$VERSION-linux-amd64.tar.gz"
+          DESTDIR="$d/root" "$d/nginx-sitemap-$VERSION-linux-amd64/install.sh"
+          "$d/root/usr/local/bin/nginx-sitemap" -version
+          "$d/root/usr/local/bin/nginx-sitemap" -config "$d/root/etc/nginx-sitemap/sitemap.conf" \
+            -nginx-conf testdata/fixtures/upstream/nginx.conf -out "$d/out"
+          test -s "$d/out/map.json" && test -s "$d/out/index.html"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          gh release create "$VERSION" dist/*.tar.gz dist/*.tar.gz.sha256 \
+            --title "nginx-sitemap $VERSION" --generate-notes --verify-tag

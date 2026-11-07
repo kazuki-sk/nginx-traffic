@@ -13,13 +13,20 @@ nginx の設定ファイルを**静的に解析して**、「どの IP:port / Ho
 
 ## 1. ビルド
 
+**配置先のサーバーに Go は要らない。** 成果物は CGO なしの静的リンクバイナリで、Go の実行環境にも libc にも依存しない。Go が必要なのはビルドするマシンだけ。通常は GitHub Release の tar.gz を使えばよく、自分でビルドする必要もない（§3）。
+
 ```bash
-make build        # CGO_ENABLED=0 go build -trimpath → bin/nginx-sitemap（静的リンク）
-make test         # go test ./...
+make build             # CGO_ENABLED=0 go build -trimpath → bin/nginx-sitemap（静的リンク）
+make test              # go test ./...
 make verify-fixtures   # Docker の nginx:1.30.0 で fixture に nginx -t を流す
+make dist              # 配布用 tar.gz → dist/nginx-sitemap-<version>-linux-<arch>.tar.gz（+ .sha256）
+make dist GOARCH=arm64 # 別アーキテクチャ向け（クロスビルド）
 ```
 
-Go 1.23 以上。実行時の依存は標準ライブラリと [nginx-go-crossplane](https://github.com/nginxinc/nginx-go-crossplane)（Apache-2.0、v0.4.89）だけ。
+- **ビルドに使う Go:** サポート中の最新パッチ版を推奨する（Release の CI は 1.27 系の最新パッチを使う）。
+  - 標準ライブラリ（`regexp`、`html/template`、`encoding/json` など）はバイナリに埋め込まれるので、Go のセキュリティ修正を取り込むには**再ビルドが必要**。Go のパッチリリースが出たら作り直す。
+  - 動作確認は Go 1.27 系で行っている。下限の目安は 1.22（nginx の正規表現でよく使う `(?<name>…)` 記法を Go の `regexp` が受け付けるようになった版）。`go.mod` には `go 1.23` と書いてある。
+- **実行時の依存:** 標準ライブラリと [nginx-go-crossplane](https://github.com/nginxinc/nginx-go-crossplane)（Apache-2.0、v0.4.89）だけ。
 
 ## 2. 使い方
 
@@ -41,26 +48,81 @@ nginx-sitemap [-config /etc/nginx-sitemap/sitemap.conf] [-nginx-conf /etc/nginx/
 
 ## 3. 配置
 
+### 3.0 インストール
+
+**A. Release の tar.gz から入れる（推奨。サーバーに Go も make も要らない）**
+
 ```bash
-sudo make install                       # バイナリ、unit、sysusers、sitemap.conf（既にあれば上書きしない）
-sudo systemd-sysusers                   # ユーザ nginx-sitemap を作成
+VER=v0.1.0; ARCH=amd64        # arm64 も用意している
+curl -LO https://github.com/kazuki-sk/nginx-traffic/releases/download/$VER/nginx-sitemap-$VER-linux-$ARCH.tar.gz
+curl -LO https://github.com/kazuki-sk/nginx-traffic/releases/download/$VER/nginx-sitemap-$VER-linux-$ARCH.tar.gz.sha256
+sha256sum -c nginx-sitemap-$VER-linux-$ARCH.tar.gz.sha256
+tar xzf nginx-sitemap-$VER-linux-$ARCH.tar.gz
+cd nginx-sitemap-$VER-linux-$ARCH && sudo ./install.sh
+```
+
+- リポジトリは private なので、`curl` では取得できない。`gh release download $VER --repo kazuki-sk/nginx-traffic` を使うか、ブラウザで取得する。
+- サーバーがインターネットに出られない場合は、手元で取得した tar.gz を `scp` で持ち込めばよい。
+
+**B. ソースから入れる**
+
+```bash
+make build            # Go のあるマシンで
+sudo make install     # bin/nginx-sitemap を配置するだけ。ビルドはしない（bin が無ければエラー）
+```
+
+- 別のマシンでビルドする場合は `make dist` で tar.gz を作り、A と同じ手順で入れる。
+
+`install.sh`（`make install` も中身はこれ）がすること:
+- 次のファイルを配置する:
+  - バイナリ（`/usr/local/bin`）
+  - unit と timer（`/etc/systemd/system`）
+  - sysusers の定義（`/usr/lib/sysusers.d`）
+  - README・各種サンプル・ライセンス（`/usr/local/share/doc/nginx-sitemap`）
+- `/etc/nginx-sitemap/sitemap.conf` が無ければサンプルから作る。**既にあれば上書きしない。**
+- `systemd-sysusers` でユーザ `nginx-sitemap` を作り、`systemctl daemon-reload` を実行する。
+- しないこと: **サービスの起動・有効化、nginx の設定変更、nginx の reload は一切しない。**
+- オプション:
+  - `DESTDIR=<dir>`: 別ディレクトリへのステージング。systemd の操作はしない。
+  - `PREFIX=/opt/...`: バイナリの置き場所を変える。unit の `ExecStart` も追従する。
+  - `--no-systemd`: systemd の操作を省く。
+
+### 3.1 起動
+
+```bash
 sudoedit /etc/nginx-sitemap/sitemap.conf
-sudo systemctl daemon-reload
 sudo systemctl start nginx-sitemap.service   # 1 回だけ試す
 journalctl -u nginx-sitemap.service -n 20
 sudo systemctl enable --now nginx-sitemap.timer
 ```
+
+### 3.2 リリースの作り方（メンテナ向け）
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+- タグを push すると GitHub Actions（[`.github/workflows/release.yml`](.github/workflows/release.yml)）が次を順に実行する:
+  1. gofmt / vet / `go test`
+  2. Docker の nginx:1.30.0 による fixture の `nginx -t` 検証
+  3. amd64 / arm64 の tar.gz と sha256 の作成
+  4. tar.gz から一時ディレクトリへのインストールと、実際の生成テスト
+  5. GitHub Release の作成
+- 使う Go は 1.27 系の最新パッチ。Actions はコミット SHA で固定している。
+- 所要時間は 1 回あたり数分で、private リポジトリの無料枠（Free プランで 2,000 分/月）に十分収まる。
+
+### 3.3 配置されるファイル
 
 | ファイル | 置き場所 |
 |---|---|
 | `deploy/systemd/nginx-sitemap.service` | `/etc/systemd/system/`（Type=oneshot） |
 | `deploy/systemd/nginx-sitemap.timer` | `/etc/systemd/system/`（`OnCalendar=*:0/15`、`Persistent=true`、`RandomizedDelaySec=60`） |
 | `deploy/systemd/nginx-sitemap.sysusers.conf` | `/usr/lib/sysusers.d/nginx-sitemap.conf` |
-| `deploy/systemd/nginx-sitemap.service.d/resolve.conf.example` | `resolve on` のときだけ `/etc/systemd/system/nginx-sitemap.service.d/resolve.conf` に置く |
+| `deploy/systemd/nginx-sitemap.service.d/resolve.conf.example` | `/usr/local/share/doc/nginx-sitemap/resolve.conf.example`。`resolve on` のときだけ手動で `/etc/systemd/system/nginx-sitemap.service.d/resolve.conf` にコピーする |
 | `deploy/sitemap.conf.example` | `/etc/nginx-sitemap/sitemap.conf` |
-| `deploy/nginx/nginx-sitemap.conf` | 公開用 server ブロックのサンプル（**自動適用しない**。§6） |
+| `deploy/nginx/nginx-sitemap.conf` | `/usr/local/share/doc/nginx-sitemap/nginx-sitemap.nginx.conf.sample`。公開用 server ブロックのサンプル（**自動適用しない**。§6） |
 
-### 3.1 実行ユーザと最小権限
+### 3.4 実行ユーザと最小権限
 
 - **専用の固定ユーザ `nginx-sitemap` を使う（root は使わない）。**
   - DynamicUser を使わないのは、`StateDirectory=` と組み合わせると実体が `/var/lib/private/`（root のみ 0700）の下に置かれ、nginx ワーカーが出力を読めなくなるため。
@@ -70,7 +132,7 @@ sudo systemctl enable --now nginx-sitemap.timer
 - **鍵やパスワードのファイルには権限を与えない。** ツールは `include` 対象以外のファイルを一切開かない。開かないファイルの例: `ssl_certificate_key`、`ssl_password_file`、`auth_basic_user_file`、証明書。unit 側でも `InaccessiblePaths=-/etc/ssl/private -/etc/nginx/tls/private` で読めなくしている（鍵の置き場所に合わせて追加する）。
 - **出力先:** `StateDirectory=nginx-sitemap` で `/var/lib/nginx-sitemap` を作る（所有者 nginx-sitemap、0755）。`UMask=0022` でファイルは 0644 になり、nginx ワーカー（nginx.org パッケージでは `nginx`）から読める。
 
-### 3.2 ハードニング（unit に設定済み）
+### 3.5 ハードニング（unit に設定済み）
 
 - **ファイルシステム:** `ProtectSystem=strict` と `ReadWritePaths=/var/lib/nginx-sitemap` で、書き込めるのは出力先だけ。ほかに `ReadOnlyPaths=/etc/nginx /etc/nginx-sitemap`、`ProtectHome`、`PrivateTmp`、`PrivateDevices`。
 - **ネットワーク:** `PrivateNetwork=yes` と `RestrictAddressFamilies=AF_UNIX`。`resolve on` のときだけ drop-in で解除する。
