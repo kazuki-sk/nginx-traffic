@@ -298,6 +298,25 @@ upstream 名にポートを付けるとエラーになる。
 
 - doc: `ngx_http_upstream_module` の server
 
+## nginx 自身への転送
+
+### 受け直す listen
+
+`proxy_pass` の宛先が、nginx 自身の listen に一致する場合に、自分自身への転送とみなす。
+宛先と同じ address:port の listen があれば、その listen で受ける。
+無ければ、同じポートのワイルドカードの listen で受ける。
+ワイルドカードで受けるとみなすのは、ループバックアドレスと、ほかの listen に書かれた IP アドレスだけ。
+
+- src: `ngx_http_init_listening` と `ngx_http_add_addrs`（「ワイルドカードと個別アドレスの共存」と同じ）
+
+### 受け直す server
+
+nginx が転送時に送る Host ヘッダで、通常のリクエストと同じ順に server を選ぶ。
+`proxy_set_header Host` が無い場合の Host は `$proxy_host`。
+`$proxy_host` は、`proxy_pass` に書いたホスト名とポート。
+
+- doc: `ngx_http_proxy_module` の proxy_set_header と、Embedded Variables の `$proxy_host`
+
 ## 継承
 
 ### 配列のディレクティブ

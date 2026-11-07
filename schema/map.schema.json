@@ -822,6 +822,75 @@
       ],
       "type": "object"
     },
+    "Hop": {
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "listen": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "nginx",
+            "manual"
+          ],
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/Reason"
+          },
+          "type": "array"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "description": "origin \"file:line\" (file relative to the conf prefix when inside it)",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "static",
+            "resolved",
+            "conditional",
+            "dynamic",
+            "declared"
+          ],
+          "type": "string"
+        },
+        "target_site": {
+          "type": "string"
+        },
+        "upstream": {
+          "type": "string"
+        },
+        "via": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "status",
+        "via",
+        "listen",
+        "host",
+        "target_site"
+      ],
+      "type": "object"
+    },
     "IfBlock": {
       "additionalProperties": false,
       "properties": {
@@ -1797,6 +1866,12 @@
           },
           "type": "array"
         },
+        "callers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "certificates": {
           "items": {
             "anyOf": [
@@ -1822,6 +1897,19 @@
         "group_source": {
           "type": "string"
         },
+        "hops": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Hop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "array"
+        },
         "id": {
           "type": "string"
         },
@@ -1830,6 +1918,9 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "internal": {
+          "type": "boolean"
         },
         "links": {
           "items": {

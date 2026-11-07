@@ -63,6 +63,7 @@ svg { display: block; }
 .node rect.box { fill: var(--panel); stroke: var(--line); }
 .node:hover rect.box, .node.sel rect.box { stroke: var(--accent); stroke-width: 2; }
 .node.manual rect.box { fill: var(--manual-soft); stroke: var(--manual); stroke-dasharray: 3 3; }
+.node.hop rect.box { fill: var(--accent-soft); stroke: var(--accent); }
 .node text { font-size: 12px; fill: var(--fg); }
 .node text.sub { font-size: 10.5px; fill: var(--muted); }
 .node text.count { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }

@@ -20,8 +20,8 @@ test:
 
 # Regenerate golden files and the JSON schema after reviewing a change.
 golden:
-	go test ./internal/app -update
 	go test ./internal/model -update
+	go test ./internal/app -update
 
 # Validate fixtures with the real nginx in Docker (nginx -t).
 verify-fixtures:

@@ -641,12 +641,11 @@
         "server_id": "s4",
         "proto": "http",
         "name": "loopback-1.example",
-        "url": "http://loopback-1.example/",
         "listens": [
           "http:127.0.0.1:80"
         ],
-        "group": "loopback-1.example",
-        "group_source": "domain",
+        "group": "nginx 内部",
+        "group_source": "default",
         "access": {
           "summary": "制限なし"
         },
@@ -673,7 +672,8 @@
             "src": "",
             "text": "}"
           }
-        ]
+        ],
+        "internal": true
       },
       {
         "src": "nginx.conf:29",
@@ -683,12 +683,11 @@
         "server_id": "s5",
         "proto": "http",
         "name": "loopback-2.example",
-        "url": "http://loopback-2.example/",
         "listens": [
           "http:127.0.0.1:80"
         ],
-        "group": "loopback-2.example",
-        "group_source": "domain",
+        "group": "nginx 内部",
+        "group_source": "default",
         "access": {
           "summary": "制限なし"
         },
@@ -715,7 +714,8 @@
             "src": "",
             "text": "}"
           }
-        ]
+        ],
+        "internal": true
       },
       {
         "src": "nginx.conf:43",

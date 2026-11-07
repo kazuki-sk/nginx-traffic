@@ -185,7 +185,9 @@ func Run(o Options) (*Outcome, error) {
 	m.Errors = append(m.Errors, sc.Errors...)
 	m.Warnings = append(m.Warnings, sc.Validate(now)...)
 	m.Warnings = append(m.Warnings, applyAnnotations(m, sc.Annotations)...)
-	m.Portal = portal.Build(portal.Input{Analysis: ar, HTTP: m.HTTP, Stream: m.Stream, Certs: cr, ConfPrefix: res.ConfPrefix})
+	var pw []model.Diag
+	m.Portal, pw = portal.Build(portal.Input{Analysis: ar, HTTP: m.HTTP, Stream: m.Stream, Certs: cr, ConfPrefix: res.ConfPrefix})
+	m.Warnings = append(m.Warnings, pw...)
 	for _, s := range m.Portal.Sites {
 		for _, c := range s.Certs {
 			if p, masked := analyze.MaskPath(c.Path, st.MaskPaths); masked {
