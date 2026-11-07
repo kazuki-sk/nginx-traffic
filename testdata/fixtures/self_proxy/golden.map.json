@@ -1,0 +1,1566 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-11-07T12:00:00Z",
+  "tool_version": "test",
+  "config_hash": "<HASH>",
+  "nginx": {
+    "main": "<REPO>/testdata/fixtures/self_proxy/nginx.conf",
+    "conf_prefix": "<REPO>/testdata/fixtures/self_proxy",
+    "assumed_version": "1.30.0",
+    "assume_superuser": true
+  },
+  "dns": {
+    "mode": "names"
+  },
+  "files": [
+    {
+      "path": "nginx.conf",
+      "sha256": "bf2555b181ff43b7f77990bafba9b8676736eb5be278fe93818584e1397ed0f9",
+      "size": 1907
+    }
+  ],
+  "http": {
+    "listens": [
+      {
+        "src": "nginx.conf:39",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:*:8080",
+        "proto": "http",
+        "addr": "*",
+        "port": 8080,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s4",
+          "explicit": false
+        },
+        "servers": [
+          "s4"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "www.example.test",
+            "server_id": "s4",
+            "src": "nginx.conf:40"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:39"
+        ]
+      },
+      {
+        "src": "nginx.conf:12",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:127.0.0.1:8081",
+        "proto": "http",
+        "addr": "127.0.0.1",
+        "port": 8081,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s1",
+          "explicit": true,
+          "src": "nginx.conf:12"
+        },
+        "servers": [
+          "s1"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "cache.local",
+            "server_id": "s1",
+            "src": "nginx.conf:13"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:12"
+        ]
+      },
+      {
+        "src": "nginx.conf:21",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:127.0.0.1:8082",
+        "proto": "http",
+        "addr": "127.0.0.1",
+        "port": 8082,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s2",
+          "explicit": false
+        },
+        "servers": [
+          "s2",
+          "s3"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "auth.local",
+            "server_id": "s3",
+            "src": "nginx.conf:27"
+          },
+          {
+            "rank": 2,
+            "group": 1,
+            "kind": "exact",
+            "name": "other.local",
+            "server_id": "s2",
+            "src": "nginx.conf:22"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:21",
+          "nginx.conf:26"
+        ]
+      },
+      {
+        "src": "nginx.conf:58",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:127.0.0.1:8090",
+        "proto": "http",
+        "addr": "127.0.0.1",
+        "port": 8090,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s5",
+          "explicit": false
+        },
+        "servers": [
+          "s5"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "loop-a.local",
+            "server_id": "s5",
+            "src": "nginx.conf:59"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:58"
+        ]
+      },
+      {
+        "src": "nginx.conf:63",
+        "origin": "nginx",
+        "status": "static",
+        "id": "http:127.0.0.1:8091",
+        "proto": "http",
+        "addr": "127.0.0.1",
+        "port": 8091,
+        "family": "inet",
+        "ssl": false,
+        "http2": false,
+        "quic": false,
+        "proxy_protocol": false,
+        "bind": false,
+        "default_server": {
+          "server_id": "s6",
+          "explicit": false
+        },
+        "servers": [
+          "s6"
+        ],
+        "name_index": [
+          {
+            "rank": 1,
+            "group": 1,
+            "kind": "exact",
+            "name": "loop-b.local",
+            "server_id": "s6",
+            "src": "nginx.conf:64"
+          }
+        ],
+        "declared_at": [
+          "nginx.conf:63"
+        ]
+      }
+    ],
+    "servers": [
+      {
+        "src": "nginx.conf:11",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s1",
+        "names": [
+          {
+            "name": "cache.local",
+            "kind": "exact",
+            "src": "nginx.conf:13"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:8081"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:14",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s1/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:16",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://app",
+              "target": {
+                "kind": "lit",
+                "value": "http://app"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:16",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://app",
+                  "upstream": "app",
+                  "kind": "upstream"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:20",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s2",
+        "names": [
+          {
+            "name": "other.local",
+            "kind": "exact",
+            "src": "nginx.conf:22"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:8082"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:23",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s2/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "handler": {
+              "src": "nginx.conf:23",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "return",
+              "raw": "return 404",
+              "code": 404
+            }
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:25",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s3",
+        "names": [
+          {
+            "name": "auth.local",
+            "kind": "exact",
+            "src": "nginx.conf:27"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:8082"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:28",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s3/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:30",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://10.5.0.9:3000",
+              "target": {
+                "kind": "lit",
+                "value": "http://10.5.0.9:3000"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:30",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://10.5.0.9:3000",
+                  "upstream": "10.5.0.9:3000",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "auth_request",
+                "args": [
+                  "/_auth"
+                ],
+                "from": "here",
+                "src": "nginx.conf:29"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:32",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s3/L2",
+            "modifier": "=",
+            "uri": "/_auth",
+            "match_group": "exact",
+            "order": 2,
+            "internal": true,
+            "handler": {
+              "src": "nginx.conf:34",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://10.5.0.10:9000",
+              "target": {
+                "kind": "lit",
+                "value": "http://10.5.0.10:9000"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:34",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://10.5.0.10:9000",
+                  "upstream": "10.5.0.10:9000",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:38",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s4",
+        "names": [
+          {
+            "name": "www.example.test",
+            "kind": "exact",
+            "src": "nginx.conf:40"
+          }
+        ],
+        "listens": [
+          "http:*:8080"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:41",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s4/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:42",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://127.0.0.1:8081",
+              "target": {
+                "kind": "lit",
+                "value": "http://127.0.0.1:8081"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:42",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://127.0.0.1:8081",
+                  "upstream": "127.0.0.1:8081",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$host"
+                ],
+                "from": "here",
+                "src": "nginx.conf:43"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:45",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s4/L2",
+            "modifier": "prefix",
+            "uri": "/admin/",
+            "match_group": "prefix",
+            "order": 2,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:46",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://127.0.0.1:8082",
+              "target": {
+                "kind": "lit",
+                "value": "http://127.0.0.1:8082"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:46",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://127.0.0.1:8082",
+                  "upstream": "127.0.0.1:8082",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "auth.local"
+                ],
+                "from": "here",
+                "src": "nginx.conf:47"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:49",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s4/L3",
+            "modifier": "prefix",
+            "uri": "/c2/",
+            "match_group": "prefix",
+            "order": 3,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:50",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://cache_layer",
+              "target": {
+                "kind": "lit",
+                "value": "http://cache_layer"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:50",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://cache_layer",
+                  "upstream": "cache_layer",
+                  "kind": "upstream"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          },
+          {
+            "src": "nginx.conf:52",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s4/L4",
+            "modifier": "prefix",
+            "uri": "/direct/",
+            "match_group": "prefix",
+            "order": 4,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:53",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://10.5.0.3:8080",
+              "target": {
+                "kind": "lit",
+                "value": "http://10.5.0.3:8080"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:53",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://10.5.0.3:8080",
+                  "upstream": "10.5.0.3:8080",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:57",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s5",
+        "names": [
+          {
+            "name": "loop-a.local",
+            "kind": "exact",
+            "src": "nginx.conf:59"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:8090"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:60",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s5/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:60",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://127.0.0.1:8091",
+              "target": {
+                "kind": "lit",
+                "value": "http://127.0.0.1:8091"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:60",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://127.0.0.1:8091",
+                  "upstream": "127.0.0.1:8091",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:62",
+        "origin": "nginx",
+        "status": "static",
+        "id": "s6",
+        "names": [
+          {
+            "name": "loop-b.local",
+            "kind": "exact",
+            "src": "nginx.conf:64"
+          }
+        ],
+        "listens": [
+          "http:127.0.0.1:8091"
+        ],
+        "locations": [
+          {
+            "src": "nginx.conf:65",
+            "origin": "nginx",
+            "status": "static",
+            "id": "s6/L1",
+            "modifier": "prefix",
+            "uri": "/",
+            "match_group": "prefix",
+            "order": 1,
+            "auto_redirect": true,
+            "handler": {
+              "src": "nginx.conf:65",
+              "origin": "nginx",
+              "status": "static",
+              "kind": "proxy_pass",
+              "raw": "proxy_pass http://127.0.0.1:8090",
+              "target": {
+                "kind": "lit",
+                "value": "http://127.0.0.1:8090"
+              },
+              "backends": [
+                {
+                  "src": "nginx.conf:65",
+                  "origin": "nginx",
+                  "status": "static",
+                  "url": "http://127.0.0.1:8090",
+                  "upstream": "127.0.0.1:8090",
+                  "kind": "address"
+                }
+              ]
+            },
+            "inherited": [
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Host",
+                  "$proxy_host"
+                ],
+                "from": "default"
+              },
+              {
+                "directive": "proxy_set_header",
+                "args": [
+                  "Connection",
+                  "close"
+                ],
+                "from": "default"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "upstreams": [
+      {
+        "src": "nginx.conf:5",
+        "origin": "nginx",
+        "status": "static",
+        "name": "app",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:5",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.5.0.1:8080",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          },
+          {
+            "src": "nginx.conf:5",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.5.0.2:8080",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s1/L1"
+        ]
+      },
+      {
+        "src": "nginx.conf:7",
+        "origin": "nginx",
+        "status": "static",
+        "name": "cache_layer",
+        "kind": "explicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:7",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:8081",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "directives": [
+          {
+            "directive": "keepalive",
+            "args": [
+              "8"
+            ],
+            "from": "here",
+            "src": "nginx.conf:7"
+          }
+        ],
+        "used_by": [
+          "s4/L3"
+        ]
+      },
+      {
+        "src": "nginx.conf:30",
+        "origin": "nginx",
+        "status": "static",
+        "name": "10.5.0.9:3000",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:30",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.5.0.9:3000",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s3/L1"
+        ]
+      },
+      {
+        "src": "nginx.conf:34",
+        "origin": "nginx",
+        "status": "static",
+        "name": "10.5.0.10:9000",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:34",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.5.0.10:9000",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s3/L2"
+        ]
+      },
+      {
+        "src": "nginx.conf:42",
+        "origin": "nginx",
+        "status": "static",
+        "name": "127.0.0.1:8081",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:42",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:8081",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s4/L1"
+        ]
+      },
+      {
+        "src": "nginx.conf:46",
+        "origin": "nginx",
+        "status": "static",
+        "name": "127.0.0.1:8082",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:46",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:8082",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s4/L2"
+        ]
+      },
+      {
+        "src": "nginx.conf:53",
+        "origin": "nginx",
+        "status": "static",
+        "name": "10.5.0.3:8080",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:53",
+            "origin": "nginx",
+            "status": "static",
+            "server": "10.5.0.3:8080",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s4/L4"
+        ]
+      },
+      {
+        "src": "nginx.conf:60",
+        "origin": "nginx",
+        "status": "static",
+        "name": "127.0.0.1:8091",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:60",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:8091",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s5/L1"
+        ]
+      },
+      {
+        "src": "nginx.conf:65",
+        "origin": "nginx",
+        "status": "static",
+        "name": "127.0.0.1:8090",
+        "kind": "implicit",
+        "balancer": "round_robin",
+        "members": [
+          {
+            "src": "nginx.conf:65",
+            "origin": "nginx",
+            "status": "static",
+            "server": "127.0.0.1:8090",
+            "weight": 1,
+            "max_fails": 1,
+            "fail_timeout": "10s",
+            "max_conns": 0,
+            "backup": false,
+            "down": false,
+            "resolve": false
+          }
+        ],
+        "used_by": [
+          "s6/L1"
+        ]
+      }
+    ],
+    "tables": []
+  },
+  "stream": null,
+  "external": [],
+  "portal": {
+    "sites": [
+      {
+        "src": "nginx.conf:38",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s4",
+        "server_id": "s4",
+        "proto": "http",
+        "name": "www.example.test",
+        "url": "http://www.example.test:8080/",
+        "listens": [
+          "http:*:8080"
+        ],
+        "group": "example.test",
+        "group_source": "domain",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.5.0.3:8080/",
+          "http://10.5.0.1:8080/",
+          "http://10.5.0.2:8080/",
+          "http://10.5.0.9:3000/",
+          "http://10.5.0.10:9000/"
+        ],
+        "upstreams": [
+          "127.0.0.1:8081",
+          "127.0.0.1:8082",
+          "cache_layer",
+          "10.5.0.3:8080"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:38",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:39",
+            "text": "    listen 8080;"
+          },
+          {
+            "src": "nginx.conf:40",
+            "text": "    server_name www.example.test;"
+          },
+          {
+            "src": "nginx.conf:41",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:42",
+            "text": "        proxy_pass http://127.0.0.1:8081;"
+          },
+          {
+            "src": "nginx.conf:43",
+            "text": "        proxy_set_header Host $host;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:45",
+            "text": "    location /admin/ {"
+          },
+          {
+            "src": "nginx.conf:46",
+            "text": "        proxy_pass http://127.0.0.1:8082;"
+          },
+          {
+            "src": "nginx.conf:47",
+            "text": "        proxy_set_header Host auth.local;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:49",
+            "text": "    location /c2/ {"
+          },
+          {
+            "src": "nginx.conf:50",
+            "text": "        proxy_pass http://cache_layer;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:52",
+            "text": "    location /direct/ {"
+          },
+          {
+            "src": "nginx.conf:53",
+            "text": "        proxy_pass http://10.5.0.3:8080;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "hops": [
+          {
+            "src": "nginx.conf:42",
+            "origin": "nginx",
+            "status": "static",
+            "location": "s4/L1",
+            "via": "127.0.0.1:8081",
+            "listen": "http:127.0.0.1:8081",
+            "host": "$host",
+            "target_site": "site-s1"
+          },
+          {
+            "src": "nginx.conf:46",
+            "origin": "nginx",
+            "status": "static",
+            "location": "s4/L2",
+            "via": "127.0.0.1:8082",
+            "listen": "http:127.0.0.1:8082",
+            "host": "auth.local",
+            "target_site": "site-s3"
+          },
+          {
+            "src": "nginx.conf:50",
+            "origin": "nginx",
+            "status": "static",
+            "location": "s4/L3",
+            "via": "127.0.0.1:8081",
+            "upstream": "cache_layer",
+            "listen": "http:127.0.0.1:8081",
+            "host": "$proxy_host (cache_layer)",
+            "target_site": "site-s1"
+          }
+        ]
+      },
+      {
+        "src": "nginx.conf:25",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s3",
+        "server_id": "s3",
+        "proto": "http",
+        "name": "auth.local",
+        "listens": [
+          "http:127.0.0.1:8082"
+        ],
+        "group": "nginx 内部",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.5.0.9:3000/",
+          "http://10.5.0.10:9000/"
+        ],
+        "upstreams": [
+          "10.5.0.9:3000",
+          "10.5.0.10:9000"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:25",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:26",
+            "text": "    listen 127.0.0.1:8082;"
+          },
+          {
+            "src": "nginx.conf:27",
+            "text": "    server_name auth.local;"
+          },
+          {
+            "src": "nginx.conf:28",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:29",
+            "text": "        auth_request /_auth;"
+          },
+          {
+            "src": "nginx.conf:30",
+            "text": "        proxy_pass http://10.5.0.9:3000;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "nginx.conf:32",
+            "text": "    location = /_auth {"
+          },
+          {
+            "src": "nginx.conf:33",
+            "text": "        internal;"
+          },
+          {
+            "src": "nginx.conf:34",
+            "text": "        proxy_pass http://10.5.0.10:9000;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "callers": [
+          "site-s4"
+        ],
+        "internal": true
+      },
+      {
+        "src": "nginx.conf:11",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s1",
+        "server_id": "s1",
+        "proto": "http",
+        "name": "cache.local",
+        "listens": [
+          "http:127.0.0.1:8081"
+        ],
+        "group": "nginx 内部",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [
+          "http://10.5.0.1:8080/",
+          "http://10.5.0.2:8080/"
+        ],
+        "upstreams": [
+          "app"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:11",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:12",
+            "text": "    listen 127.0.0.1:8081 default_server;"
+          },
+          {
+            "src": "nginx.conf:13",
+            "text": "    server_name cache.local;"
+          },
+          {
+            "src": "nginx.conf:14",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:15",
+            "text": "        proxy_cache c;"
+          },
+          {
+            "src": "nginx.conf:16",
+            "text": "        proxy_pass http://app;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "callers": [
+          "site-s4"
+        ],
+        "internal": true
+      },
+      {
+        "src": "nginx.conf:57",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s5",
+        "server_id": "s5",
+        "proto": "http",
+        "name": "loop-a.local",
+        "listens": [
+          "http:127.0.0.1:8090"
+        ],
+        "group": "nginx 内部",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [
+          "127.0.0.1:8091"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:57",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:58",
+            "text": "    listen 127.0.0.1:8090;"
+          },
+          {
+            "src": "nginx.conf:59",
+            "text": "    server_name loop-a.local;"
+          },
+          {
+            "src": "nginx.conf:60",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:60",
+            "text": "        proxy_pass http://127.0.0.1:8091;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "hops": [
+          {
+            "src": "nginx.conf:60",
+            "origin": "nginx",
+            "status": "static",
+            "location": "s5/L1",
+            "via": "127.0.0.1:8091",
+            "listen": "http:127.0.0.1:8091",
+            "host": "$proxy_host (127.0.0.1:8091)",
+            "target_site": "site-s6"
+          }
+        ],
+        "callers": [
+          "site-s6"
+        ],
+        "internal": true
+      },
+      {
+        "src": "nginx.conf:62",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s6",
+        "server_id": "s6",
+        "proto": "http",
+        "name": "loop-b.local",
+        "listens": [
+          "http:127.0.0.1:8091"
+        ],
+        "group": "nginx 内部",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [
+          "127.0.0.1:8090"
+        ],
+        "config": [
+          {
+            "src": "nginx.conf:62",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:63",
+            "text": "    listen 127.0.0.1:8091;"
+          },
+          {
+            "src": "nginx.conf:64",
+            "text": "    server_name loop-b.local;"
+          },
+          {
+            "src": "nginx.conf:65",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:65",
+            "text": "        proxy_pass http://127.0.0.1:8090;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "hops": [
+          {
+            "src": "nginx.conf:65",
+            "origin": "nginx",
+            "status": "static",
+            "location": "s6/L1",
+            "via": "127.0.0.1:8090",
+            "listen": "http:127.0.0.1:8090",
+            "host": "$proxy_host (127.0.0.1:8090)",
+            "target_site": "site-s5"
+          }
+        ],
+        "callers": [
+          "site-s5"
+        ],
+        "internal": true
+      },
+      {
+        "src": "nginx.conf:20",
+        "origin": "nginx",
+        "status": "static",
+        "id": "site-s2",
+        "server_id": "s2",
+        "proto": "http",
+        "name": "other.local",
+        "listens": [
+          "http:127.0.0.1:8082"
+        ],
+        "group": "nginx 内部",
+        "group_source": "default",
+        "access": {
+          "summary": "制限なし"
+        },
+        "inner_urls": [],
+        "upstreams": [],
+        "config": [
+          {
+            "src": "nginx.conf:20",
+            "text": "server {"
+          },
+          {
+            "src": "nginx.conf:21",
+            "text": "    listen 127.0.0.1:8082;"
+          },
+          {
+            "src": "nginx.conf:22",
+            "text": "    server_name other.local;"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "    location / {"
+          },
+          {
+            "src": "nginx.conf:23",
+            "text": "        return 404;"
+          },
+          {
+            "src": "",
+            "text": "    }"
+          },
+          {
+            "src": "",
+            "text": "}"
+          }
+        ],
+        "internal": true
+      }
+    ],
+    "http_config": [
+      {
+        "src": "nginx.conf:8",
+        "text": "proxy_cache_path /tmp/nginx-fixture-cache keys_zone=c:1m;",
+        "kind": "inherited"
+      }
+    ],
+    "upstream_config": {
+      "http:app": [
+        {
+          "src": "nginx.conf:5",
+          "text": "upstream app {"
+        },
+        {
+          "src": "nginx.conf:5",
+          "text": "    server 10.5.0.1:8080;"
+        },
+        {
+          "src": "nginx.conf:5",
+          "text": "    server 10.5.0.2:8080;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ],
+      "http:cache_layer": [
+        {
+          "src": "nginx.conf:7",
+          "text": "upstream cache_layer {"
+        },
+        {
+          "src": "nginx.conf:7",
+          "text": "    server 127.0.0.1:8081;"
+        },
+        {
+          "src": "nginx.conf:7",
+          "text": "    keepalive 8;"
+        },
+        {
+          "src": "",
+          "text": "}"
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "warnings": [
+    {
+      "code": "self-proxy-loop",
+      "message": "nginx 内部の転送がループしています: loop-a.local → loop-b.local → loop-a.local",
+      "src": "nginx.conf:57"
+    }
+  ]
+}

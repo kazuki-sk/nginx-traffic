@@ -123,7 +123,7 @@ function draw(cols, edges, titles, widths) {
   });
   Object.keys(pos).forEach(function (id) {
     var Q = pos[id], n = Q.n;
-    var g = el("g", { "class": "node" + (n.manual ? " manual" : ""), transform: "translate(" + Q.x + "," + Q.y + ")", tabindex: "0", role: "button" }, gN);
+    var g = el("g", { "class": "node" + (n.manual ? " manual" : "") + (n.hop ? " hop" : ""), transform: "translate(" + Q.x + "," + Q.y + ")", tabindex: "0", role: "button" }, gN);
     el("rect", { "class": "box", width: Q.w, height: NH, rx: 7 }, g);
     if (!n.manual) el("rect", { width: 3, height: NH - 12, x: 0, y: 6, fill: "var(" + colColor[Math.min(Q.ci, 4)] + ")" }, g);
     el("text", { x: 10, y: n.sub ? 17 : 24 }, g).textContent = clip(n.label, Q.w - (n.count != null ? 36 : 0));
@@ -236,7 +236,6 @@ function showGroup(g) {
   var list = $("glist");
   list.innerHTML = siteListHTML(members);
   $("gfilter").addEventListener("input", function (e) { var q = e.target.value.trim().toLowerCase(); list.innerHTML = siteListHTML(members.filter(function (s) { return s.name.toLowerCase().indexOf(q) >= 0; })); });
-  bindSiteLinks(list);
 }
 function showUpstream(key) {
   var u = upstreams[key], name = key.replace(/^(http|stream):/, "");
@@ -247,7 +246,6 @@ function showUpstream(key) {
       return "<code>" + esc(m.server) + "</code>" + f.map(function (x) { return " <span class='tag'>" + esc(x) + "</span>"; }).join("");
     }).join("<br>") + "</dd>" + (u.src ? "<dt>出典</dt><dd><code>" + esc(u.src) + "</code></dd>" : "") + "</dl>" : "") +
     "<div class='kind'>使っているサイト（" + users.length + "）</div><ul class='list' id='ulist'>" + siteListHTML(users) + "</ul>";
-  bindSiteLinks($("ulist"));
 }
 
 // one site: listen → site → path → upstream → destination
@@ -276,68 +274,111 @@ function showSite(id) {
   }
   var srv = servers[s.server_id] || {};
   var c0 = s.listens.map(function (l) { return { id: "L:" + l, label: listenLabel(l), sub: listenSub(l) }; });
-  var c1 = [{ id: "S", label: s.name, sub: s.owner ? "担当 " + s.owner : (s.aliases && s.aliases.length ? "別名 " + s.aliases.length + " 件" : "") }];
-  var c2 = [], c3 = [], c4 = [], edges = [], seen = {};
+  var c1 = [{ id: "S", label: s.name, sub: (s.internal ? "nginx 内部 · " : "") + (s.owner ? "担当 " + s.owner : (s.aliases && s.aliases.length ? "別名 " + s.aliases.length + " 件" : "")) }];
+  // columns: 待ち受け | サイト | パス | (nginx 内部で受け直す | 内部のパス) | upstream | 宛先
+  var cPath = [], cHop = [], cInner = [], cUp = [], cDest = [], edges = [], seen = {};
   s.listens.forEach(function (l) { edges.push({ a: "L:" + l, b: "S" }); });
   function addNode(col, n) { if (seen[n.id]) return; seen[n.id] = 1; col.push(n); }
-  function addHandler(pid, h) {
+  function hopNode(hop) {
+    var t = siteById[hop.target_site]; if (!t) return null;
+    var id = "H:" + t.id;
+    addNode(cHop, { id: id, label: "↩ " + hop.via + " → " + t.name, sub: "nginx 内部 · " + hop.host, hop: true, flag: hop.status === "conditional" ? "--dyn" : null,
+      title: hop.note || "", onclick: function () { showSite(t.id); } });
+    return id;
+  }
+  function hopsAt(site, locId, via) { return (site.hops || []).filter(function (h) { return h.location === locId && (via == null || h.via === via); }); }
+  // addHandler draws a handler's destinations. site is the site whose
+  // configuration the handler belongs to (the inner site when expanding).
+  function addHandler(site, pid, locId, h, expand) {
     if (!h) return;
     var dyn = h.status === "dynamic" || h.status === "conditional";
     (h.backends || []).forEach(function (b) {
       var bdyn = dyn || b.status === "dynamic" || b.status === "conditional";
-      if (b.upstream) {
-        var k = upKey(s, b.upstream), u = upstreams[k];
-        addNode(c3, { id: "U:" + k, label: b.upstream, sub: u ? (u.kind === "implicit" ? "直接指定" : u.balancer) : "", onclick: function () { showUpstream(k); } });
+      var k = b.upstream ? upKey(site, b.upstream) : null, u = k ? upstreams[k] : null;
+      var members = u ? u.members.map(function (m) { return m.server; }) : [];
+      var selfHops = [];
+      if (u && u.kind === "implicit") selfHops = hopsAt(site, locId, b.upstream);
+      else if (u) members.forEach(function (m) { selfHops = selfHops.concat(hopsAt(site, locId, m)); });
+      else selfHops = hopsAt(site, locId, null).filter(function (x) { return b.url.indexOf(x.via) >= 0; });
+      selfHops.forEach(function (hop) {
+        var hid = expand ? hopNode(hop) : null;
+        if (hid) edges.push({ a: pid, b: hid, dyn: bdyn || hop.status === "conditional", when: (hop.upstream ? "upstream " + hop.upstream + " · " : "") + "Host: " + hop.host });
+        else { var t = siteById[hop.target_site]; addNode(cDest, { id: "D:hop:" + hop.target_site, label: "↩ " + (t ? t.name : hop.via), sub: "nginx 内部（さらに転送）", hop: true, onclick: t ? function () { showSite(t.id); } : null }); edges.push({ a: pid, b: "D:hop:" + hop.target_site }); }
+      });
+      var selfVia = {}; selfHops.forEach(function (x) { selfVia[x.via] = 1; });
+      if (u) {
+        var rest = u.kind === "implicit" ? (selfHops.length ? [] : members) : members.filter(function (m) { return !selfVia[m]; });
+        if (!rest.length) return;
+        addNode(cUp, { id: "U:" + k, label: b.upstream, sub: u.kind === "implicit" ? "直接指定" : u.balancer, onclick: function () { showUpstream(k); } });
         edges.push({ a: pid, b: "U:" + k, dyn: bdyn, when: b.when });
-        if (u) u.members.forEach(function (m) {
+        u.members.forEach(function (m) {
+          if (rest.indexOf(m.server) < 0) return;
           var f = m.backup ? "backup" : m.down ? "down" : "";
-          addNode(c4, { id: "D:" + m.server, label: m.server, sub: f, flag: m.status === "dynamic" ? "--dyn" : null, title: m.status === "dynamic" ? "実行時に名前を解決" : "" });
+          addNode(cDest, { id: "D:" + m.server, label: m.server, sub: f, flag: m.status === "dynamic" ? "--dyn" : null, title: m.status === "dynamic" ? "実行時に名前を解決" : "" });
           edges.push({ a: "U:" + k, b: "D:" + m.server });
         });
-      } else {
-        addNode(c4, { id: "D:" + b.url, label: b.url, sub: b.kind === "dynamic" ? "実行時に決まる" : "", flag: b.kind === "dynamic" ? "--dyn" : null });
+      } else if (!selfHops.length) {
+        addNode(cDest, { id: "D:" + b.url, label: b.url, sub: b.kind === "dynamic" ? "実行時に決まる" : "", flag: b.kind === "dynamic" ? "--dyn" : null });
         edges.push({ a: pid, b: "D:" + b.url, dyn: bdyn, when: b.when });
       }
     });
     if (!(h.backends || []).length) {
       var t = h.target ? exprText(h.target) : "";
-      if (h.kind === "static" || h.kind === "try_files") { addNode(c4, { id: "D:root:" + t, label: t || "html", sub: "ローカルのファイル" }); edges.push({ a: pid, b: "D:root:" + t }); }
-      else if (h.kind === "return" || h.kind === "redirect") { var lbl = (h.code || "") + (t ? " " + t : ""); addNode(c4, { id: "D:ret:" + lbl, label: lbl, sub: h.kind === "redirect" ? "リダイレクト" : "応答を返す" }); edges.push({ a: pid, b: "D:ret:" + lbl, dyn: dyn }); }
-      else if (h.kind === "internal-redirect") { addNode(c4, { id: "D:ir:" + t, label: "→ " + t, sub: "内部リダイレクト" }); edges.push({ a: pid, b: "D:ir:" + t }); }
+      if (h.kind === "static" || h.kind === "try_files") { addNode(cDest, { id: "D:root:" + t, label: t || "html", sub: "ローカルのファイル" }); edges.push({ a: pid, b: "D:root:" + t }); }
+      else if (h.kind === "return" || h.kind === "redirect") { var lbl = (h.code || "") + (t ? " " + t : ""); addNode(cDest, { id: "D:ret:" + lbl, label: lbl, sub: h.kind === "redirect" ? "リダイレクト" : "応答を返す" }); edges.push({ a: pid, b: "D:ret:" + lbl, dyn: dyn }); }
+      else if (h.kind === "internal-redirect") { addNode(cDest, { id: "D:ir:" + t, label: "→ " + t, sub: "内部リダイレクト" }); edges.push({ a: pid, b: "D:ir:" + t }); }
     }
+  }
+  function walkLocations(site, server, col, prefix, rootId, expand) {
+    if (server.handler) { var sid = prefix + "srv"; col.push({ id: sid, label: "（location に一致しない場合）", sub: handlerSub(server.handler) }); edges.push({ a: rootId, b: sid }); addHandler(site, sid, "", server.handler, expand); }
+    (function walk(ls, parentLabel, parentId) {
+      (ls || []).forEach(function (l) {
+        var pid = prefix + l.id, label = locLabel(l, parentLabel);
+        var dyn = l.handler && (l.handler.status === "dynamic" || l.handler.status === "conditional");
+        col.push({ id: pid, label: label, sub: handlerSub(l.handler), flag: dyn ? "--dyn" : null, title: l.src || "" });
+        edges.push({ a: parentId || rootId, b: pid });
+        addHandler(site, pid, l.id, l.handler, expand);
+        (l.if_blocks || []).forEach(function (ib) { if (ib.handler) addHandler(site, pid, l.id, ib.handler, expand); });
+        walk(l.children, label, null);
+      });
+    })(server.locations, "", null);
   }
   if (s.proto === "stream") {
     var h = srv.handler;
-    c2.push({ id: "P:stream", label: h ? h.kind : "（処理なし）", sub: h && h.raw ? h.raw : "" });
+    cPath.push({ id: "P:stream", label: h ? h.kind : "（処理なし）", sub: h && h.raw ? h.raw : "" });
     edges.push({ a: "S", b: "P:stream" });
-    addHandler("P:stream", h);
+    addHandler(s, "P:stream", "", h, false);
   } else {
-    if (srv.handler) { c2.push({ id: "P:srv", label: "（location に一致しない場合）", sub: handlerSub(srv.handler) }); edges.push({ a: "S", b: "P:srv" }); addHandler("P:srv", srv.handler); }
-    (function walk(ls, parentLabel, parentId) {
-      (ls || []).forEach(function (l) {
-        var pid = "P:" + l.id, label = locLabel(l, parentLabel);
-        var dyn = l.handler && (l.handler.status === "dynamic" || l.handler.status === "conditional");
-        c2.push({ id: pid, label: label, sub: handlerSub(l.handler), flag: dyn ? "--dyn" : null, title: l.src || "" });
-        edges.push({ a: parentId || "S", b: pid });
-        addHandler(pid, l.handler);
-        (l.if_blocks || []).forEach(function (ib, i) { if (ib.handler) { addHandler(pid, ib.handler); } });
-        walk(l.children, label, null);
-      });
-    })(srv.locations, "", null);
+    walkLocations(s, srv, cPath, "P:", "S", true);
+    // expand each site received through nginx itself (one level)
+    cHop.slice().forEach(function (hn) {
+      var t = siteById[hn.id.slice(2)], ts = t && servers[t.server_id];
+      if (ts) walkLocations(t, ts, cInner, "I:" + t.id + ":", hn.id, false);
+    });
   }
-  draw([c0, c1, c2, c3, c4], edges, ["待ち受け", "サイト", "パス", "upstream", "宛先"], [150, 240, 220, 180, 220]);
+  var cols = [c0, c1, cPath], titles = ["待ち受け", "サイト", "パス"], widths = [150, 230, 210];
+  if (cHop.length) { cols.push(cHop, cInner); titles.push("nginx 内部で受け直す", "内部のパス"); widths.push(260, 200); }
+  cols.push(cUp, cDest); titles.push("upstream", "宛先"); widths.push(180, 220);
+  draw(cols, edges, titles, widths);
   side.innerHTML = siteDetail(s);
   var cb = $("toconf"); if (cb) cb.addEventListener("click", function () { showConf(s.id); });
 }
+bindSiteLinks(side);
 function siteDetail(s) {
   var h = "<h2>" + esc(s.name) + "</h2><div class='kind'>" + esc(s.group) + (s.manual ? " · 手動で登録" : s.proto === "stream" && s.group !== "TCP / UDP" ? " · TCP / UDP" : "") + "</div><dl class='kv'>";
-  h += "<dt>外の URL</dt><dd>" + (s.url ? ext(s.url) : (s.endpoints && s.endpoints.length ? s.endpoints.map(function (u) { return ext(u); }).join("<br>") : "<span class='empty'>なし</span>")) + "</dd>";
+  h += "<dt>外の URL</dt><dd>" + (s.url ? ext(s.url) : (s.endpoints && s.endpoints.length ? s.endpoints.map(function (u) { return ext(u); }).join("<br>") : "<span class='empty'>" + (s.internal ? "なし（このホストの内部だけで待ち受け）" : "なし") + "</span>")) + "</dd>";
   h += "<dt>中の URL</dt><dd>" + ((s.inner_urls || []).length ? s.inner_urls.map(function (u) { return ext(u); }).join("<br>") : "<span class='empty'>なし</span>") + "</dd>";
   if (s.certificates && s.certificates.length) {
     h += "<dt>証明書</dt><dd>" + s.certificates.map(function (c) {
       if (c.error) return "<span class='tag warn'>読めない</span> <code>" + esc(c.path) + "</code><div class='reason'>" + esc(c.error) + "</div>";
       return certTag({ kind: "ok", d: daysLeft(c.not_after) }) + " " + esc(String(c.not_after).slice(0, 10)) + " まで<div class='empty'>" + esc((c.dns_names || []).slice(0, 4).join(", ")) + "</div>";
     }).join("") + "</dd>";
+  }
+  if (s.internal) h += "<dt>役割</dt><dd><span class='tag'>nginx 内部用</span> ほかの server から転送されて受け直す</dd>";
+  if (s.callers && s.callers.length) h += "<dt>呼び出し元</dt><dd>" + s.callers.length + " サイト<ul class='list'>" + s.callers.slice(0, 10).map(function (c) { var x = siteById[c]; return x ? "<li><a href='#' data-site='" + esc(c) + "'>" + esc(x.name) + "</a></li>" : ""; }).join("") + (s.callers.length > 10 ? "<li class='empty'>ほか " + (s.callers.length - 10) + " 件</li>" : "") + "</ul></dd>";
+  if (s.hops && s.hops.length) {
+    var vt = []; s.hops.forEach(function (x) { if (vt.indexOf(x.target_site) < 0) vt.push(x.target_site); });
+    h += "<dt>経由</dt><dd>" + vt.map(function (t) { var x = siteById[t]; return x ? "<a href='#' data-site='" + esc(t) + "'>↩ " + esc(x.name) + "</a>" : ""; }).join("<br>") + "<div class='empty'>中の URL は、経由先から先の宛先です</div></dd>";
   }
   if (s.note) h += "<dt>用途</dt><dd>" + esc(s.note) + "</dd>";
   if (s.owner) h += "<dt>担当</dt><dd>" + esc(s.owner) + "</dd>";
@@ -374,6 +415,8 @@ function card(s) {
   if (s.access && s.access.summary !== "制限なし") tags.push("<span class='tag'>" + esc(s.access.summary) + "</span>");
   if (s.access && s.access.auth) s.access.auth.forEach(function (a) { tags.push("<span class='tag'>" + esc(a) + "</span>"); });
   if (s.status === "dynamic" || s.status === "conditional") tags.push("<span class='tag dyn'>条件で変わる</span>");
+  if (s.internal) tags.push("<span class='tag'>nginx 内部用" + (s.callers && s.callers.length ? " · 呼び出し元 " + s.callers.length : "") + "</span>");
+  if (s.hops && s.hops.length) tags.push("<span class='tag'>内部経由 ↩ " + esc((siteById[s.hops[0].target_site] || {}).name || s.hops[0].via) + "</span>");
   if (s.manual && staleNames[s.name]) tags.push("<span class='tag warn'>確認が古い</span>");
   var open = s.url ? "<a class='open' href='" + esc(s.url) + "' target='_blank' rel='noopener noreferrer'>" + esc(s.url) + " ↗</a>" :
     (s.endpoints && s.endpoints.filter(isWeb).length ? "<a class='open' href='" + esc(s.endpoints.filter(isWeb)[0]) + "' target='_blank' rel='noopener noreferrer'>" + esc(s.endpoints.filter(isWeb)[0]) + " ↗</a>" : "<span class='empty'>開く URL なし</span>");
@@ -413,7 +456,8 @@ function renderLedger() {
     ledger.innerHTML = "<tr><th class='sort' data-sort='name'>サイト" + (lsort === "name" ? " ▲" : "") + "</th><th>外の URL</th><th>中の URL</th><th class='sort' data-sort='cert'>証明書の期限" + (lsort === "cert" ? " ▲" : "") + "</th><th>担当</th><th>リンク</th></tr>" +
       rows.map(function (s) {
         var cs = certSummary(s);
-        return "<tr><td><a href='#' data-site='" + esc(s.id) + "'>" + esc(s.name) + "</a>" + (s.manual ? " <span class='tag man'>手動登録</span>" : "") + "</td>" +
+        return "<tr><td><a href='#' data-site='" + esc(s.id) + "'>" + esc(s.name) + "</a>" + (s.manual ? " <span class='tag man'>手動登録</span>" : "") +
+          (s.internal ? " <span class='tag'>nginx 内部用</span>" : "") + (s.hops && s.hops.length ? " <span class='tag'>内部経由</span>" : "") + "</td>" +
           "<td>" + (s.url ? ext(s.url) : (s.endpoints || []).map(function (u) { return ext(u); }).join("<br>")) + "</td>" +
           "<td>" + (s.inner_urls || []).map(function (u) { return ext(u); }).join("<br>") + "</td>" +
           "<td class='num'>" + certTag(cs) + (cs.kind === "ok" ? "<br>" + esc(String(cs.cert.not_after).slice(0, 10)) : "") + "</td>" +
@@ -441,14 +485,18 @@ function hlCode(t) {
   if (!m) return esc(t);
   return esc(m[1]) + "<span class='tok-d'>" + esc(m[2]) + "</span>" + esc(m[3]).replace(/(\$[A-Za-z_0-9]+)/g, "<span class='tok-v'>$1</span>");
 }
+var hopNotes = {};
 function lineHTML(l) {
   var cls = l.kind === "include" ? "inc" : l.kind === "inherited" ? "inh" : l.kind === "marker" ? "mark" : "";
-  return "<div class='ln " + cls + "'><span class='src' title='" + esc(l.src) + "'>" + esc(l.src) + "</span><span class='code'>" + hlCode(l.text) + "</span></div>";
+  var note = hopNotes[l.src] ? "<span class='tok-c'>   # → nginx 内部: " + esc(hopNotes[l.src]) + "</span>" : "";
+  return "<div class='ln " + cls + "'><span class='src' title='" + esc(l.src) + "'>" + esc(l.src) + "</span><span class='code'>" + hlCode(l.text) + note + "</span></div>";
 }
 function showConf(id) {
   show("conf");
   var s = siteById[id]; if (!s || s.manual) return;
   $("cq").value = s.name;
+  hopNotes = {};
+  (s.hops || []).forEach(function (x) { var t = siteById[x.target_site]; if (x.src && t) hopNotes[x.src] = hopNotes[x.src] ? hopNotes[x.src] + ", " + t.name : t.name; });
   var files = {}; s.config.forEach(function (l) { if (l.src) files[l.src.replace(/:\d+$/, "")] = 1; });
   var ups = s.upstreams.map(function (u) { return { name: u, lines: P.upstream_config[upKey(s, u)] }; }).filter(function (x) { return x.lines; });
   ups.forEach(function (u) { u.lines.forEach(function (l) { if (l.src) files[l.src.replace(/:\d+$/, "")] = 1; }); });

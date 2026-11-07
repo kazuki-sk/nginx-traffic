@@ -25,9 +25,10 @@ type Input struct {
 	ConfPrefix string
 }
 
-// Build creates the portal view. It must run after masking and after
-// manual annotations have been attached to servers.
-func Build(in Input) *model.Portal {
+// Build creates the portal view and returns warnings found while linking
+// forwards back into nginx. It must run after masking and after manual
+// annotations have been attached to servers.
+func Build(in Input) (*model.Portal, []model.Diag) {
 	p := &model.Portal{Sites: []*model.Site{}, HTTPConfig: []model.ConfigLine{}, UpstreamConfig: map[string][]model.ConfigLine{}}
 	nodes := in.Analysis.Nodes
 	if in.HTTP != nil {
@@ -54,6 +55,7 @@ func Build(in Input) *model.Portal {
 	for key, n := range nodes.Upstreams {
 		p.UpstreamConfig[key] = render(n, n.Src.File, 0, nil)
 	}
+	warnings := dedupe(linkHops(p, in))
 	sort.SliceStable(p.Sites, func(i, j int) bool {
 		a, b := p.Sites[i], p.Sites[j]
 		if a.Group != b.Group {
@@ -61,7 +63,20 @@ func Build(in Input) *model.Portal {
 		}
 		return a.Name < b.Name
 	})
-	return p
+	return p, warnings
+}
+
+func dedupe(ds []model.Diag) []model.Diag {
+	seen := map[string]bool{}
+	var out []model.Diag
+	for _, d := range ds {
+		k := d.Code + "|" + d.Message
+		if !seen[k] {
+			seen[k] = true
+			out = append(out, d)
+		}
+	}
+	return out
 }
 
 func newSite(id, proto string, meta model.Meta, listens []string) *model.Site {

@@ -369,6 +369,26 @@ type Site struct {
 	Certs       []*Cert       `json:"certificates,omitempty"`
 	Config      []ConfigLine  `json:"config"`
 	Annotations []*Annotation `json:"annotations,omitempty"`
+	// Hops are *_pass destinations that point back to this nginx
+	// (e.g. proxy_pass http://127.0.0.1:8081 to another server block).
+	Hops []*Hop `json:"hops,omitempty"`
+	// Callers are the sites that forward to this one through nginx itself.
+	Callers []string `json:"callers,omitempty"`
+	// Internal is true when the site only listens on loopback or unix sockets.
+	Internal bool `json:"internal,omitempty"`
+}
+
+// Hop is a forward from a location back into this nginx, received again
+// by another server block.
+type Hop struct {
+	Meta
+	Location   string `json:"location,omitempty"` // location id ("" = server level)
+	Via        string `json:"via"`                // address as written: 127.0.0.1:8081, unix:/run/x.sock
+	Upstream   string `json:"upstream,omitempty"` // upstream whose member points back, if any
+	Listen     string `json:"listen"`             // listen id that receives it
+	Host       string `json:"host"`               // Host header expression sent
+	TargetSite string `json:"target_site"`
+	Note       string `json:"note,omitempty"`
 }
 
 // Access summarises allow/deny and authentication at server level.
